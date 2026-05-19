@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnackFlow — Dashboard</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/dashboard.css">
+</head>
+<body>
+  <header>
+    <h1>🍟 SnackFlow POS</h1>
+    <div class="header-right">
+      <span id="user-name"></span>
+      <span class="role-badge" id="role-badge"></span>
+      <button class="btn btn-outline" onclick="auth.logout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <p class="welcome">Bienvenido, <span id="welcome-name"></span> 👋</p>
+
+    <div class="stats">
+      <div class="stat-card green">
+        <div class="stat-label">Ventas hoy</div>
+        <div class="stat-value" id="stat-ventas">—</div>
+        <div class="stat-sub">transacciones</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total recaudado</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-sub">colones hoy</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">Efectivo</div>
+        <div class="stat-value" id="stat-efectivo">—</div>
+        <div class="stat-sub">colones hoy</div>
+      </div>
+      <div class="stat-card coral">
+        <div class="stat-label">Tarjeta</div>
+        <div class="stat-value" id="stat-tarjeta">—</div>
+        <div class="stat-sub">colones hoy</div>
+      </div>
+    </div>
+
+    <p class="section-title">Acciones rápidas</p>
+    <div class="actions" id="actions-container"></div>
+
+    <p class="section-title">Ventas recientes</p>
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Cliente</th>
+            <th>Total</th>
+            <th>Pago</th>
+            <th>Estado</th>
+            <th>Hora</th>
+          </tr>
+        </thead>
+        <tbody id="sales-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/dashboard.js"></script>
+</body>
+</html>
