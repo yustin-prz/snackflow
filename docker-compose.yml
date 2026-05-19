@@ -1,6 +1,20 @@
 version: '3.9'
 
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: snackflow-db
+    environment:
+      POSTGRES_DB: snackflow
+      POSTGRES_USER: snackflow_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
   backend:
     build: ./backend
     container_name: snackflow-backend
@@ -12,7 +26,7 @@ services:
       - ./backend:/app
       - /app/node_modules
     depends_on:
-      - frontend
+      - db
     restart: unless-stopped
 
   frontend:
@@ -22,5 +36,8 @@ services:
       - "8080:80"
     restart: unless-stopped
 
-# La base de datos vive en Neon (nube) — no se levanta localmente.
-# La cadena de conexión va en el archivo .env
+volumes:
+  postgres_data:
+
+# Base de datos local (PostgreSQL en Docker) = fuente principal
+# Neon = respaldo en la nube (sincronización periódica)
