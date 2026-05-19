@@ -47,6 +47,9 @@ services:
     container_name: snackflow-frontend
     ports:
       - "8080:80"
+    volumes:
+      - ./frontend/pages:/usr/share/nginx/html
+      - ./frontend/assets:/usr/share/nginx/html/assets
     depends_on:
       backend:
         condition: service_healthy
