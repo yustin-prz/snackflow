@@ -51,6 +51,44 @@ input {
 
 input:focus { border-color: #1F4E79; }
 
+.input-wrapper {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.input-wrapper input {
+  margin-bottom: 0;
+  padding-right: 42px;
+}
+
+.input-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.input-toggle:hover { color: #1F4E79; }
+
+.forgot-link {
+  display: block;
+  text-align: center;
+  margin-top: 14px;
+  font-size: 13px;
+  color: #2E75B6;
+  text-decoration: none;
+}
+
+.forgot-link:hover { text-decoration: underline; }
+
 .login-footer {
   text-align: center;
   margin-top: 24px;

@@ -28,3 +28,23 @@ async function login() {
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter') login();
 });
+
+function togglePassword() {
+  const input   = document.getElementById('password');
+  const iconEye    = document.getElementById('icon-eye');
+  const iconEyeOff = document.getElementById('icon-eye-off');
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    iconEye.style.display    = 'none';
+    iconEyeOff.style.display = 'block';
+  } else {
+    input.type = 'password';
+    iconEye.style.display    = 'block';
+    iconEyeOff.style.display = 'none';
+  }
+}
+
+function forgotPassword() {
+  alert('Funcionalidad próximamente — requiere Google Authenticator');
+}
