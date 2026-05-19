@@ -1,0 +1,131 @@
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+}
+
+.modal-close:hover { color: #444; }
+
+.modal h2 {
+  font-size: 18px;
+  color: #1F4E79;
+  margin-bottom: 8px;
+}
+
+.modal p {
+  font-size: 13px;
+  color: #888;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.modal label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.modal input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.modal input:focus { border-color: #1F4E79; }
+
+.modal .btn {
+  width: 100%;
+}
+
+.modal .error-msg {
+  background: #FFEBEE;
+  color: #C62828;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+
+.modal .success-msg {
+  background: #E1F5EE;
+  color: #085041;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+
+.qr-container {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.qr-container img {
+  width: 180px;
+  height: 180px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.qr-container p {
+  font-size: 12px;
+  color: #888;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.step-indicator {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.step {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: #e5e7eb;
+}
+
+.step.active  { background: #1F4E79; }
+.step.done    { background: #1D9E75; }

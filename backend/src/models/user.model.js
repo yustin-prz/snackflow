@@ -27,6 +27,10 @@ const User = sequelize.define('User', {
   active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  totp_secret: {
+    type: DataTypes.STRING(255),
+    allowNull: true
   }
 }, {
   tableName: 'users',

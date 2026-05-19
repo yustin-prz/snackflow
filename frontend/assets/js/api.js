@@ -11,7 +11,8 @@ const api = {
       },
       body: JSON.stringify(body)
     });
-    return { ok: res.ok, data: await res.json() };
+    const data = await res.json();
+    return { ok: res.ok, data };
   },
 
   async get(endpoint) {
@@ -21,6 +22,7 @@ const api = {
         ...(token && { 'Authorization': `Bearer ${token}` })
       }
     });
-    return { ok: res.ok, data: await res.json() };
+    const data = await res.json();
+    return { ok: res.ok, data };
   }
 };
