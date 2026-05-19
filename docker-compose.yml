@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  backend:
+    build: ./backend
+    container_name: snackflow-backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - frontend
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: snackflow-frontend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+# La base de datos vive en Neon (nube) — no se levanta localmente.
+# La cadena de conexión va en el archivo .env
