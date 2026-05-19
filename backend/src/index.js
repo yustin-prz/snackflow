@@ -1,8 +1,10 @@
 require('dotenv').config();
-const express    = require('express');
-const cors       = require('cors');
-const helmet     = require('helmet');
-const { connectDB } = require('./config/database');
+const express        = require('express');
+const cors           = require('cors');
+const helmet         = require('helmet');
+const swaggerUi      = require('swagger-ui-express');
+const swaggerSpec    = require('./config/swagger');
+const { connectDB }  = require('./config/database');
 
 const authRoutes     = require('./routes/auth.routes');
 const salesRoutes    = require('./routes/sales.routes');
@@ -12,10 +14,18 @@ const reportsRoutes  = require('./routes/reports.routes');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// Seguridad
-app.use(helmet());
+// Seguridad — Helmet con excepción para Swagger UI
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
 app.use(cors());
 app.use(express.json());
+
+// Documentación Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'SnackFlow POS API',
+  customCss: '.swagger-ui .topbar { background-color: #1F4E79; }'
+}));
 
 // Rutas
 app.use('/api/auth',     authRoutes);
@@ -30,6 +40,7 @@ const start = async () => {
   await connectDB();
   app.listen(PORT, () => {
     console.log(`SnackFlow backend corriendo en http://localhost:${PORT}`);
+    console.log(`Documentación API: http://localhost:${PORT}/api-docs`);
   });
 };
 
