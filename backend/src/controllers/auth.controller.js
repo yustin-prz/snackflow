@@ -9,10 +9,30 @@ const login = async (req, res) => {
     const result = await authService.login(username, password, totpToken);
     res.json(result);
   } catch (error) {
+    if (error.mustChangePassword) {
+      return res.status(202).json({ mustChangePassword: true, message: error.message });
+    }
     if (error.requireTotp) {
-      return res.status(202).json({ requireTotp: true, message: error.message });
+      return res.status(202).json({
+        requireTotp: true,
+        message: error.message,
+        pendingSetup: !!error.pendingSetup,
+        deadline: error.deadline || null,
+        qrCode: error.qrCode || null,
+        secret: error.secret || null
+      });
     }
     res.status(401).json({ message: error.message });
+  }
+};
+
+const changeTempPassword = async (req, res) => {
+  try {
+    const { username, tempPassword, newPassword, confirmPassword } = req.body;
+    const result = await authService.changeTempPassword(username, tempPassword, newPassword, confirmPassword);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
 
@@ -41,4 +61,4 @@ const verifyTotpAndReset = async (req, res) => {
   }
 };
 
-module.exports = { login, setupTotp, verifyTotpAndReset };
+module.exports = { login, changeTempPassword, setupTotp, verifyTotpAndReset };

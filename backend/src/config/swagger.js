@@ -40,8 +40,13 @@ const options = {
           properties: {
             id:        { type: 'integer', example: 1 },
             username:  { type: 'string',  example: 'admin' },
+            email:     { type: 'string',  example: 'admin@lamatamonchis.com' },
             full_name: { type: 'string',  example: 'Administrador' },
-            role:      { type: 'string',  enum: ['admin', 'cashier'], example: 'admin' }
+            role:      { type: 'string',  enum: ['admin', 'cashier'], example: 'admin' },
+            active:    { type: 'boolean', example: true },
+            totp_confirmed:      { type: 'boolean', example: true },
+            totp_setup_deadline: { type: 'string', format: 'date-time', nullable: true },
+            must_change_password: { type: 'boolean', example: true }
           }
         },
         Product: {

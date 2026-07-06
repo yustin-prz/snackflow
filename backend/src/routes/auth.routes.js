@@ -1,7 +1,7 @@
 const express   = require('express');
 const router    = express.Router();
 const rateLimit = require('express-rate-limit');
-const { login, setupTotp, verifyTotpAndReset } = require('../controllers/auth.controller');
+const { login, changeTempPassword, setupTotp, verifyTotpAndReset } = require('../controllers/auth.controller');
 const { verifyToken } = require('../middlewares/auth.middleware');
 
 const loginLimiter = rateLimit({
@@ -16,6 +16,14 @@ const loginLimiter = rateLimit({
 const resetLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 3,
+  message: { message: 'Demasiados intentos. Intentá de nuevo en 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const changePasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: { message: 'Demasiados intentos. Intentá de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -147,5 +155,43 @@ router.post('/setup-totp', verifyToken, setupTotp);
  *         description: Demasiados intentos
  */
 router.post('/reset-password', resetLimiter, verifyTotpAndReset);
+
+/**
+ * @swagger
+ * /api/auth/change-temp-password:
+ *   post:
+ *     summary: Cambiar la contraseña temporal en el primer login
+ *     tags: [Autenticación]
+ *     security: []
+ *     description: Se usa cuando el login responde `{mustChangePassword true}`. Requiere la contraseña temporal para confirmar identidad.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username, tempPassword, newPassword, confirmPassword]
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: cajero1
+ *               tempPassword:
+ *                 type: string
+ *                 description: Contraseña temporal recibida por correo
+ *               newPassword:
+ *                 type: string
+ *                 example: miContrasenaNueva123
+ *               confirmPassword:
+ *                 type: string
+ *                 example: miContrasenaNueva123
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada correctamente
+ *       400:
+ *         description: Contraseñas no coinciden, contraseña temporal incorrecta, o datos inválidos
+ *       429:
+ *         description: Demasiados intentos
+ */
+router.post('/change-temp-password', changePasswordLimiter, changeTempPassword);
 
 module.exports = router;

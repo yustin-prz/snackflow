@@ -13,15 +13,25 @@ async function login() {
     return;
   }
 
+  await attemptLogin(username, password);
+}
+
+async function attemptLogin(username, password) {
+  const errorMsg = document.getElementById('error-msg');
+
   try {
     const { ok, data } = await api.post('/auth/login', { username, password });
     if (ok && data.token) {
       localStorage.setItem('token', data.token);
       window.location.href = '/dashboard.html';
+    } else if (data.mustChangePassword) {
+      pendingUsername = username;
+      pendingPassword = password;
+      openChangePasswordModal();
     } else if (data.requireTotp) {
       pendingUsername = username;
       pendingPassword = password;
-      openTotpModal();
+      openTotpModal(data);
     } else {
       errorMsg.textContent = data.message || 'Usuario o contraseña incorrectos.';
       errorMsg.style.display = 'block';
@@ -32,9 +42,84 @@ async function login() {
   }
 }
 
-function openTotpModal() {
+function openChangePasswordModal() {
+  document.getElementById('change-new-password').value = '';
+  document.getElementById('change-confirm-password').value = '';
+  document.getElementById('change-temp-password').value = '';
+  document.getElementById('error-msg-change-password').style.display = 'none';
+  document.getElementById('change-password-modal').classList.add('active');
+}
+
+function closeChangePasswordModal() {
+  document.getElementById('change-password-modal').classList.remove('active');
+}
+
+async function submitChangePassword() {
+  const errorMsg = document.getElementById('error-msg-change-password');
+  errorMsg.style.display = 'none';
+
+  const newPassword = document.getElementById('change-new-password').value;
+  const confirmPassword = document.getElementById('change-confirm-password').value;
+  const tempPassword = document.getElementById('change-temp-password').value;
+
+  if (!newPassword || !confirmPassword || !tempPassword) {
+    errorMsg.textContent = 'Completá todos los campos.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    errorMsg.textContent = 'Las contraseñas nuevas no coinciden.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+  if (newPassword.length < 6) {
+    errorMsg.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+    errorMsg.style.display = 'block';
+    return;
+  }
+
+  try {
+    const { ok, data } = await api.post('/auth/change-temp-password', {
+      username: pendingUsername, tempPassword, newPassword, confirmPassword
+    });
+    if (!ok) {
+      errorMsg.textContent = data.message || 'No se pudo cambiar la contraseña.';
+      errorMsg.style.display = 'block';
+      return;
+    }
+
+    closeChangePasswordModal();
+    pendingPassword = newPassword;
+    // Continúa el flujo automáticamente (ahora debería pedir el QR/2FA).
+    await attemptLogin(pendingUsername, pendingPassword);
+  } catch (e) {
+    errorMsg.textContent = 'No se pudo conectar con el servidor.';
+    errorMsg.style.display = 'block';
+  }
+}
+
+function openTotpModal(data) {
   document.getElementById('totp-input').value = '';
   document.getElementById('error-msg-totp').style.display = 'none';
+
+  const warning = document.getElementById('totp-setup-warning');
+  if (data.pendingSetup && data.deadline) {
+    const formatted = new Date(data.deadline).toLocaleString('es-CR', { dateStyle: 'short', timeStyle: 'short' });
+    warning.textContent = `Todavía no confirmaste tu Google Authenticator. Tenés hasta el ${formatted} (24 horas) para escanear el QR e ingresar el código, o tu cuenta será desactivada automáticamente.`;
+    warning.style.display = 'block';
+  } else {
+    warning.style.display = 'none';
+  }
+
+  const qrContainer = document.getElementById('totp-qr-container');
+  if (data.pendingSetup && data.qrCode) {
+    document.getElementById('totp-qr-image').src = data.qrCode;
+    document.getElementById('totp-qr-secret').textContent = data.secret || '';
+    qrContainer.style.display = 'block';
+  } else {
+    qrContainer.style.display = 'none';
+  }
+
   document.getElementById('totp-modal').classList.add('active');
   setTimeout(() => document.getElementById('totp-input').focus(), 100);
 }
@@ -65,6 +150,13 @@ async function verifyTotp() {
     if (ok) {
       localStorage.setItem('token', data.token);
       window.location.href = '/dashboard.html';
+    } else if (data.requireTotp) {
+      // Código incorrecto pero seguimos pendientes de configurar: mantené el QR visible.
+      openTotpModal(data);
+      errorMsg.textContent = data.message === 'Código de Google Authenticator incorrecto o expirado.'
+        ? 'Código incorrecto o expirado.'
+        : data.message;
+      errorMsg.style.display = 'block';
     } else {
       errorMsg.textContent = data.message || 'Código incorrecto.';
       errorMsg.style.display = 'block';
@@ -110,11 +202,15 @@ function forgotPassword() {
 }
 
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeTotpModal();
+  if (e.key === 'Escape') {
+    if (document.getElementById('totp-modal').classList.contains('active')) closeTotpModal();
+    if (document.getElementById('change-password-modal').classList.contains('active')) closeChangePasswordModal();
+  }
   if (e.key === 'Enter') {
-    const totpModal = document.getElementById('totp-modal');
-    if (totpModal.classList.contains('active')) {
+    if (document.getElementById('totp-modal').classList.contains('active')) {
       verifyTotp();
+    } else if (document.getElementById('change-password-modal').classList.contains('active')) {
+      submitChangePassword();
     } else {
       login();
     }

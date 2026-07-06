@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnackFlow — Usuarios</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo-icon.png">
+  <script src="/assets/js/theme.js"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/dashboard.css">
+  <link rel="stylesheet" href="/assets/css/modal.css">
+  <link rel="stylesheet" href="/assets/css/users.css">
+</head>
+<body>
+  <header>
+    <a class="header-brand" href="/dashboard.html">
+      <img src="/assets/img/logo.png" alt="La Matamonchis">
+      <h1>SnackFlow</h1>
+    </a>
+    <div class="header-right">
+      <span id="user-name"></span>
+      <span class="role-badge" id="role-badge"></span>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+      <button class="btn btn-outline" onclick="auth.logout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <div class="container users-container">
+    <a href="/dashboard.html" class="back-link">← Volver al dashboard</a>
+
+    <div class="page-header">
+      <div>
+        <p class="welcome">Usuarios</p>
+        <p class="section-subtitle">Gestioná los usuarios del sistema</p>
+      </div>
+      <button class="btn btn-primary" onclick="openCreateModal()">+ Nuevo usuario</button>
+    </div>
+
+    <div class="table-card">
+      <div class="error-msg" id="page-error"></div>
+      <table id="users-table-el">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Usuario</th>
+            <th>Correo</th>
+            <th>Nombre completo</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>2FA</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="users-table">
+          <tr><td colspan="8" class="empty-state">Cargando usuarios...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal crear/editar usuario -->
+  <div class="modal-overlay" id="user-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeUserModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+
+      <h2 id="modal-title">Nuevo usuario</h2>
+      <div class="error-msg" id="modal-error"></div>
+
+      <input type="hidden" id="user-id">
+
+      <label for="user-username">Usuario</label>
+      <input type="text" id="user-username" placeholder="nombre.usuario">
+
+      <label for="user-email">Correo electrónico</label>
+      <input type="email" id="user-email" placeholder="nombre@lamatamonchis.com">
+
+      <label for="user-fullname">Nombre completo</label>
+      <input type="text" id="user-fullname" placeholder="Juan Pérez">
+
+      <label for="user-role">Rol</label>
+      <select id="user-role">
+        <option value="cashier">Cajero</option>
+        <option value="admin">Administrador</option>
+      </select>
+
+      <div id="password-field-wrapper" style="display:none">
+        <label for="user-password">Nueva contraseña (opcional)</label>
+        <input type="password" id="user-password" placeholder="Dejar en blanco para no cambiarla">
+      </div>
+
+      <p id="create-password-note" class="section-subtitle" style="margin-bottom:16px">
+        Se va a generar una contraseña temporal y se va a enviar por correo al usuario. Va a tener que cambiarla en su primer login.
+      </p>
+
+      <button class="btn btn-primary" onclick="submitUserForm()">Guardar</button>
+    </div>
+  </div>
+
+  <!-- Modal QR de Google Authenticator (alta y reenvío) -->
+  <div class="modal-overlay" id="qr-modal">
+    <div class="modal" style="text-align:center;">
+      <h2>Configurar Google Authenticator</h2>
+      <p>El usuario <b id="qr-username"></b> necesita escanear este código QR con Google Authenticator antes de poder iniciar sesión. El 2FA es obligatorio para todos los usuarios.</p>
+      <p id="qr-deadline-warning" class="deadline-warning"></p>
+      <div class="qr-container">
+        <img id="qr-image" src="" alt="Código QR de Google Authenticator">
+        <p>Clave manual (si no podés escanear el QR): <b id="qr-secret"></b></p>
+      </div>
+      <button class="btn btn-primary" onclick="closeQrModal()">Listo, ya lo escaneé</button>
+    </div>
+  </div>
+
+  <!-- Modal confirmación de activar/desactivar (con 2FA del admin) -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal">
+      <button class="modal-close" onclick="closeConfirmModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+
+      <h2 id="confirm-title">Confirmar acción</h2>
+      <p id="confirm-desc"></p>
+      <div class="error-msg" id="confirm-error"></div>
+
+      <label for="confirm-totp">Tu código de Google Authenticator</label>
+      <input type="text" id="confirm-totp" placeholder="000000" maxlength="6" style="text-align:center; font-size:20px; letter-spacing:6px; font-weight:600;">
+
+      <button class="btn btn-primary" id="confirm-btn" onclick="submitConfirmAction()">Confirmar</button>
+    </div>
+  </div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/users.js"></script>
+</body>
+</html>

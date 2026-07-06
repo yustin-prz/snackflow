@@ -16,3 +16,6 @@ Thumbs.db
 # IDEs
 .vscode/
 .idea/
+
+# Assets de marca sin procesar (ya copiados a frontend/assets/img)
+brand-assets/

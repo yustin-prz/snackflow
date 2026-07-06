@@ -4,10 +4,15 @@
 CREATE TABLE IF NOT EXISTS users (
     id          SERIAL PRIMARY KEY,
     username    VARCHAR(50) UNIQUE NOT NULL,
+    email       VARCHAR(150) UNIQUE NOT NULL,
     password    VARCHAR(255) NOT NULL,
     full_name   VARCHAR(100) NOT NULL,
     role        VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'cashier')),
     active      BOOLEAN DEFAULT TRUE,
+    totp_secret VARCHAR(255),
+    totp_confirmed BOOLEAN NOT NULL DEFAULT FALSE,
+    totp_setup_deadline TIMESTAMP,
+    must_change_password BOOLEAN NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMP DEFAULT NOW()
 );
 

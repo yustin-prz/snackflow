@@ -11,6 +11,7 @@ const authRoutes     = require('./routes/auth.routes');
 const salesRoutes    = require('./routes/sales.routes');
 const productsRoutes = require('./routes/products.routes');
 const reportsRoutes  = require('./routes/reports.routes');
+const usersRoutes    = require('./routes/users.routes');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +29,7 @@ app.use('/api/auth',     authRoutes);
 app.use('/api/sales',    salesRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/reports',  reportsRoutes);
+app.use('/api/users',    usersRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', project: 'SnackFlow POS' }));
 

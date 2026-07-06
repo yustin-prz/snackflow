@@ -4,13 +4,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SnackFlow — Iniciar sesión</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo-icon.png">
+  <script src="/assets/js/theme.js"></script>
   <link rel="stylesheet" href="/assets/css/main.css">
   <link rel="stylesheet" href="/assets/css/login.css">
   <link rel="stylesheet" href="/assets/css/modal.css">
 </head>
 <body>
+  <button class="theme-toggle-corner" onclick="toggleTheme()" title="Cambiar tema">
+    <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+      <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+    </svg>
+    <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+    </svg>
+  </button>
   <div class="login-card">
   <div class="logo">
+    <img src="/assets/img/logo.png" alt="La Matamonchis">
     <h1>SnackFlow</h1>
     <p>Sistema POS — La Matamonchis S.A.</p>
   </div>
@@ -41,7 +56,7 @@
 <div class="modal-overlay" id="totp-modal">
   <div class="modal" style="max-width:320px; text-align:center;">
     <div style="margin-bottom:16px;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#1F4E79" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" style="stroke: var(--text-dark)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
         <line x1="12" y1="18" x2="12.01" y2="18"/>
       </svg>
@@ -49,10 +64,35 @@
     <h2>Verificación en dos pasos</h2>
     <p>Ingresá el código de 6 dígitos de Google Authenticator.</p>
     <div class="error-msg" id="error-msg-totp" style="text-align:left"></div>
+    <div class="error-msg" id="totp-setup-warning" style="text-align:left; background: var(--status-amber-bg); color: var(--status-amber-text);"></div>
+    <div class="qr-container" id="totp-qr-container" style="display:none">
+      <img id="totp-qr-image" src="" alt="Código QR de Google Authenticator">
+      <p>Clave manual: <b id="totp-qr-secret"></b></p>
+    </div>
     <input type="text" id="totp-input" placeholder="000000" maxlength="6"
       style="text-align:center; font-size:22px; letter-spacing:8px; font-weight:600; margin-top:8px;">
     <button class="btn btn-primary" style="width:100%; margin-bottom:10px" onclick="verifyTotp()">Verificar</button>
-    <button class="btn" style="width:100%; background:#f0f4f8; color:#444;" onclick="closeTotpModal()">Cancelar</button>
+    <button class="btn" style="width:100%; background: var(--border-soft); color: var(--text-body);" onclick="closeTotpModal()">Cancelar</button>
+  </div>
+</div>
+
+<!-- Modal cambio de contraseña temporal (primer login) -->
+<div class="modal-overlay" id="change-password-modal">
+  <div class="modal" style="max-width:340px;">
+    <h2>Definí tu contraseña</h2>
+    <p>Tu contraseña actual es temporal. Elegí una nueva antes de continuar.</p>
+    <div class="error-msg" id="error-msg-change-password" style="text-align:left"></div>
+
+    <label for="change-new-password">Nueva contraseña</label>
+    <input type="password" id="change-new-password" placeholder="Mínimo 6 caracteres">
+
+    <label for="change-confirm-password">Confirmar nueva contraseña</label>
+    <input type="password" id="change-confirm-password" placeholder="Repetí la contraseña">
+
+    <label for="change-temp-password">Contraseña temporal (la que recibiste por correo)</label>
+    <input type="password" id="change-temp-password" placeholder="Contraseña temporal">
+
+    <button class="btn btn-primary" style="width:100%" onclick="submitChangePassword()">Cambiar contraseña</button>
   </div>
 </div>
 
@@ -114,7 +154,7 @@
         <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
         <polyline points="22 4 12 14.01 9 11.01"/>
       </svg>
-      <h2 style="color:#1D9E75">¡Contraseña actualizada!</h2>
+      <h2 style="color: var(--status-green-text)">¡Contraseña actualizada!</h2>
       <p style="margin-bottom:20px">Tu contraseña fue cambiada correctamente. Ya podés iniciar sesión.</p>
       <button class="btn btn-primary" onclick="closeForgotModal()">Iniciar sesión</button>
     </div>

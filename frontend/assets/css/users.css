@@ -1,0 +1,146 @@
+.back-link {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #B45309;
+  text-decoration: none;
+  margin-bottom: 16px;
+}
+[data-theme="dark"] .back-link { color: var(--brand-gold-light); }
+
+.back-link:hover { text-decoration: underline; }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.role-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 99px;
+  background: var(--brand-gray);
+  color: var(--text-body);
+}
+
+.role-tag.admin { background: var(--status-amber-bg); color: var(--status-amber-text); }
+
+.status.active   { background: var(--status-green-bg); color: var(--status-green-text); }
+.status.inactive { background: var(--status-red-bg);   color: var(--status-red-text); }
+
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.twofa-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.twofa-deadline {
+  font-size: 11px;
+  color: var(--status-amber-text);
+  white-space: nowrap;
+}
+
+/* La tabla de usuarios tiene más columnas que la del dashboard: más ancho
+   de página, columnas de tamaño fijo y truncado con elipsis para que no
+   se desborde de la tarjeta ni obligue a scroll horizontal. */
+.container.users-container {
+  max-width: 1180px;
+}
+
+#users-table-el {
+  table-layout: fixed;
+}
+
+#users-table-el th,
+#users-table-el td {
+  padding: 10px 8px;
+  overflow: hidden;
+}
+
+#users-table-el td.truncate {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+#users-table-el th:nth-child(1) { width: 4%; }
+#users-table-el th:nth-child(2) { width: 12%; }
+#users-table-el th:nth-child(3) { width: 18%; }
+#users-table-el th:nth-child(4) { width: 15%; }
+#users-table-el th:nth-child(5) { width: 11%; }
+#users-table-el th:nth-child(6) { width: 9%; }
+#users-table-el th:nth-child(7) { width: 14%; }
+#users-table-el th:nth-child(8) { width: 17%; }
+
+.link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.link-btn.edit { color: #B45309; }
+[data-theme="dark"] .link-btn.edit { color: var(--brand-gold-light); }
+.link-btn.deactivate { color: #C62828; }
+[data-theme="dark"] .link-btn.deactivate { color: var(--status-red-text); }
+.link-btn.activate { color: #085041; }
+[data-theme="dark"] .link-btn.activate { color: var(--status-green-text); }
+.link-btn.qr { color: #92400E; }
+[data-theme="dark"] .link-btn.qr { color: var(--status-amber-text); }
+
+.status.pending { background: var(--status-amber-bg); color: var(--status-amber-text); }
+
+.deadline-warning {
+  background: var(--status-amber-bg);
+  color: var(--status-amber-text);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+}
+
+.deadline-warning.show { display: block; }
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.modal select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border-default);
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  outline: none;
+  background: var(--card-bg);
+  color: var(--text-body);
+}
+
+.modal select:focus { border-color: var(--brand-gold); }

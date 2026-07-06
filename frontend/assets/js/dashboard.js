@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const adminActions = [
     { icon: '🧾', title: 'Nueva venta',  desc: 'Iniciar una nueva transacción', href: '/pos.html'     },
     { icon: '📊', title: 'Reportes',     desc: 'Ver reportes de ventas',         href: '/reports.html' },
-    { icon: '👥', title: 'Usuarios',     desc: 'Gestionar usuarios del sistema', href: '#'             },
+    { icon: '👥', title: 'Usuarios',     desc: 'Gestionar usuarios del sistema', href: '/users.html'   },
     { icon: '📦', title: 'Productos',    desc: 'Ver catálogo de productos',       href: '#'             },
   ];
 

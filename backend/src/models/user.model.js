@@ -12,6 +12,12 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true
   },
+  email: {
+    type: DataTypes.STRING(150),
+    allowNull: false,
+    unique: true,
+    validate: { isEmail: true }
+  },
   password: {
     type: DataTypes.STRING(255),
     allowNull: false
@@ -31,6 +37,20 @@ const User = sequelize.define('User', {
   totp_secret: {
     type: DataTypes.STRING(255),
     allowNull: true
+  },
+  totp_confirmed: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  totp_setup_deadline: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  must_change_password: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 }, {
   tableName: 'users',

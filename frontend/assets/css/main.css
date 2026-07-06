@@ -1,26 +1,104 @@
+:root {
+  /* Paleta de marca — La Matamonchis S.A. */
+  --brand-gold:        #f9c307;
+  --brand-gold-light:  #fbdb6b;
+  --brand-gold-pale:   #fde79c;
+  --brand-yellow:      #FACF39;
+  --brand-gradient:    linear-gradient(135deg, #FACF39, #f9c307);
+  --brand-gray:        #e6e6e6;
+
+  --text-dark:   #3a2c05;   /* texto oscuro cálido, para usar sobre fondos dorados */
+  --text-body:   #444;
+  --text-muted:  #8a8577;
+  --text-faint:  #aaaaaa;
+  --text-faint-2: #bbbbbb;
+  --bg-app:      #faf8f3;   /* fondo cálido, no azul frío */
+  --card-bg:     #ffffff;
+  --border-soft: #ece7d8;
+  --border-default: #dddddd;
+  --border-row:  #f0f0f0;
+  --border-row-2: #f9f9f9;
+  --border-card: #e5e7eb;
+
+  --status-green-bg: #E1F5EE;  --status-green-text: #085041;
+  --status-red-bg:   #FFEBEE;  --status-red-text:   #C62828;
+  --status-amber-bg: #FEF3C7;  --status-amber-text: #92400E;
+
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.05);
+  --shadow-modal: 0 8px 32px rgba(0,0,0,0.15);
+}
+
+/* Tema oscuro — más cómodo para uso prolongado, mismo dorado pero atenuado */
+[data-theme="dark"] {
+  --brand-gradient:    linear-gradient(135deg, #8a6a08, #b8860b);
+  --brand-gray:        #2a2618;
+
+  --text-dark:   #fbdb6b;
+  --text-body:   #d9d3c2;
+  --text-muted:  #a89f88;
+  --text-faint:  #7d7566;
+  --text-faint-2: #6b6455;
+  --bg-app:      #14120c;
+  --card-bg:     #1f1c14;
+  --border-soft: #33301f;
+  --border-default: #3a3626;
+  --border-row:  #2a2618;
+  --border-row-2: #211e14;
+  --border-card: #33301f;
+
+  --status-green-bg: #10332a;  --status-green-text: #5fd9ae;
+  --status-red-bg:   #3a1c1c;  --status-red-text:   #ff8a8a;
+  --status-amber-bg: #3a2c0a;  --status-amber-text: #f5c76e;
+
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.35);
+  --shadow-modal: 0 8px 32px rgba(0,0,0,0.5);
+}
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+html { background: var(--bg-app); }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #f0f4f8;
+  background: var(--bg-app);
+  color: var(--text-body);
   min-height: 100vh;
+  transition: background 0.2s, color 0.2s;
 }
 
 /* Header */
 header {
-  background: #1F4E79;
-  color: white;
-  padding: 14px 28px;
+  background: var(--brand-gradient);
+  color: var(--text-dark);
+  padding: 12px 28px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  box-shadow: 0 2px 10px rgba(249, 195, 7, 0.25);
 }
 
-header h1 { font-size: 18px; font-weight: 700; }
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: opacity 0.15s;
+}
+
+.header-brand:hover { opacity: 0.85; }
+
+.header-brand img {
+  height: 34px;
+  width: 34px;
+  border-radius: 50%;
+}
+
+header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
 
 .header-right {
   display: flex;
@@ -35,8 +113,29 @@ header h1 { font-size: 18px; font-weight: 700; }
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 99px;
-  background: rgba(255,255,255,0.15);
+  background: rgba(58, 44, 5, 0.14);
 }
+
+/* Botón de tema (sol/luna) */
+.theme-toggle {
+  background: rgba(58, 44, 5, 0.12);
+  border: none;
+  cursor: pointer;
+  color: var(--text-dark);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover { background: rgba(58, 44, 5, 0.22); }
+.theme-toggle .icon-moon { display: none; }
+[data-theme="dark"] .theme-toggle .icon-sun  { display: none; }
+[data-theme="dark"] .theme-toggle .icon-moon { display: block; }
 
 /* Botones */
 .btn {
@@ -46,23 +145,23 @@ header h1 { font-size: 18px; font-weight: 700; }
   font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: background 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
 .btn-primary {
-  background: #1F4E79;
-  color: white;
+  background: var(--brand-gradient);
+  color: var(--text-dark);
 }
 
-.btn-primary:hover { background: #2E75B6; }
+.btn-primary:hover { box-shadow: 0 2px 10px rgba(249, 195, 7, 0.45); }
 
 .btn-outline {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.4);
-  color: white;
+  border: 1px solid rgba(58, 44, 5, 0.35);
+  color: var(--text-dark);
 }
 
-.btn-outline:hover { background: rgba(255,255,255,0.1); }
+.btn-outline:hover { background: rgba(58, 44, 5, 0.08); }
 
 /* Contenedor */
 .container {
@@ -73,17 +172,17 @@ header h1 { font-size: 18px; font-weight: 700; }
 
 /* Cards */
 .card {
-  background: white;
+  background: var(--card-bg);
   border-radius: 10px;
   padding: 24px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  box-shadow: var(--shadow-card);
 }
 
 /* Estados vacíos */
 .empty-state {
   text-align: center;
   padding: 32px;
-  color: #bbb;
+  color: var(--text-faint-2);
   font-size: 14px;
 }
 
@@ -96,14 +195,14 @@ header h1 { font-size: 18px; font-weight: 700; }
   border-radius: 99px;
 }
 
-.status.completed { background: #E1F5EE; color: #085041; }
-.status.open      { background: #FEF3C7; color: #92400E; }
-.status.cancelled { background: #FFEBEE; color: #C62828; }
+.status.completed { background: var(--status-green-bg); color: var(--status-green-text); }
+.status.open      { background: var(--status-amber-bg); color: var(--status-amber-text); }
+.status.cancelled { background: var(--status-red-bg);   color: var(--status-red-text); }
 
 /* Mensajes de error */
 .error-msg {
-  background: #FFEBEE;
-  color: #C62828;
+  background: var(--status-red-bg);
+  color: var(--status-red-text);
   padding: 10px 14px;
   border-radius: 8px;
   font-size: 13px;

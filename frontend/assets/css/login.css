@@ -2,15 +2,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--brand-gradient);
+  background-attachment: fixed;
 }
 
 .login-card {
-  background: white;
-  border-radius: 12px;
+  background: var(--card-bg);
+  border-radius: 16px;
   padding: 40px;
   width: 100%;
   max-width: 380px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 32px rgba(58, 44, 5, 0.2);
 }
 
 .logo {
@@ -18,15 +20,22 @@ body {
   margin-bottom: 28px;
 }
 
+.logo img {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  margin-bottom: 12px;
+}
+
 .logo h1 {
-  font-size: 26px;
-  color: #1F4E79;
+  font-size: 24px;
+  color: var(--text-dark);
   font-weight: 700;
 }
 
 .logo p {
   font-size: 13px;
-  color: #888;
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -34,22 +43,24 @@ label {
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: #444;
+  color: var(--text-body);
   margin-bottom: 6px;
 }
 
 input {
   width: 100%;
   padding: 10px 14px;
-  border: 1.5px solid #ddd;
+  border: 1.5px solid var(--border-default);
   border-radius: 8px;
   font-size: 14px;
   margin-bottom: 16px;
   outline: none;
+  background: var(--card-bg);
+  color: var(--text-body);
   transition: border-color 0.2s;
 }
 
-input:focus { border-color: #1F4E79; }
+input:focus { border-color: var(--brand-gold); }
 
 .input-wrapper {
   position: relative;
@@ -70,20 +81,20 @@ input:focus { border-color: #1F4E79; }
   border: none;
   cursor: pointer;
   padding: 0;
-  color: #aaa;
+  color: var(--text-faint);
   display: flex;
   align-items: center;
   transition: color 0.2s;
 }
 
-.input-toggle:hover { color: #1F4E79; }
+.input-toggle:hover { color: var(--text-dark); }
 
 .forgot-link {
   display: block;
   text-align: center;
   margin-top: 14px;
   font-size: 13px;
-  color: #2E75B6;
+  color: #B45309;
   text-decoration: none;
 }
 
@@ -93,5 +104,27 @@ input:focus { border-color: #1F4E79; }
   text-align: center;
   margin-top: 24px;
   font-size: 12px;
-  color: #bbb;
+  color: var(--text-faint-2);
 }
+
+.theme-toggle-corner {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: rgba(255,255,255,0.85);
+  border: none;
+  cursor: pointer;
+  color: var(--text-dark);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.theme-toggle-corner .icon-moon { display: none; }
+[data-theme="dark"] .theme-toggle-corner .icon-sun  { display: none; }
+[data-theme="dark"] .theme-toggle-corner .icon-moon { display: block; }
+[data-theme="dark"] .theme-toggle-corner { background: rgba(31,28,20,0.9); }
