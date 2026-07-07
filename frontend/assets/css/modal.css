@@ -73,6 +73,49 @@
 
 .modal input:focus { border-color: var(--brand-gold); }
 
+.modal-divider {
+  width: 100%;
+  height: 0;
+  box-sizing: border-box;
+  border: none;
+  border-top: 1px solid var(--border-default);
+  margin: 16px 0;
+}
+
+/* Quita las flechitas nativas del input number — no combinan con el tema */
+.modal input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.modal input[type="number"]::-webkit-outer-spin-button,
+.modal input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Botón nativo de "Seleccionar archivo" — se restylea con ::file-selector-button */
+.modal input[type="file"] {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.modal input[type="file"]::file-selector-button {
+  background: var(--brand-gradient);
+  color: var(--text-dark);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  margin-right: 12px;
+  transition: box-shadow 0.2s;
+}
+
+.modal input[type="file"]::file-selector-button:hover {
+  box-shadow: 0 2px 8px rgba(249, 195, 7, 0.4);
+}
+
 .modal .btn {
   width: 100%;
 }

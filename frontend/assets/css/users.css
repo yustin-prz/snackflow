@@ -131,6 +131,13 @@
   color: var(--text-body);
 }
 
+.checkbox-label input[type="checkbox"] {
+  accent-color: var(--brand-gold);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .modal select {
   width: 100%;
   padding: 10px 14px;

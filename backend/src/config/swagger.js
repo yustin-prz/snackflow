@@ -52,10 +52,11 @@ const options = {
         Product: {
           type: 'object',
           properties: {
-            id:     { type: 'integer', example: 1 },
-            name:   { type: 'string',  example: 'Papas' },
-            price:  { type: 'number',  example: 800.00 },
-            active: { type: 'boolean', example: true }
+            id:       { type: 'integer', example: 1 },
+            name:     { type: 'string',  example: 'Papas' },
+            price:    { type: 'number',  example: 800.00 },
+            active:   { type: 'boolean', example: true },
+            hasImage: { type: 'boolean', example: true, description: 'Indica si tiene imagen; para verla usar GET /api/products/{id}/image' }
           }
         },
         Sale: {

@@ -18,6 +18,10 @@ const Product = sequelize.define('Product', {
   active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
+  },
+  image: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   tableName: 'products',

@@ -48,7 +48,7 @@ snackflow/
 │   │   │   ├── auth.controller.js
 │   │   │   ├── users.controller.js
 │   │   │   ├── sales.controller.js
-│   │   │   ├── products.controller.js
+│   │   │   ├── products.controller.js  # CRUD real (borrado físico) + imagen base64
 │   │   │   └── reports.controller.js
 │   │   └── middlewares/
 │   │       └── auth.middleware.js  # verifyToken, verifyAdmin
@@ -57,6 +57,7 @@ snackflow/
 │   │   ├── users.service.js        # CRUD de usuarios, activar/desactivar, contraseña temporal
 │   │   ├── email.service.js        # Envío de contraseña temporal por correo (nodemailer/Gmail)
 │   │   ├── totp.service.js         # generateSecret, generateQR, buildOtpauthUrl, verifyToken
+│   │   ├── products.service.js     # CRUD de productos, borrado físico, manejo de imagen base64
 │   │   ├── sales.service.js
 │   │   ├── discount.service.js     # Reglas HU-05
 │   │   ├── promotion.service.js    # Reglas HU-06
@@ -74,6 +75,7 @@ snackflow/
 │   │   ├── login.html
 │   │   ├── dashboard.html
 │   │   ├── users.html          # Gestión de usuarios (solo admin)
+│   │   ├── products.html       # Catálogo de productos (lectura: todos, escritura: admin)
 │   │   └── pos.html            # En construcción
 │   └── assets/
 │       ├── css/
@@ -81,14 +83,17 @@ snackflow/
 │       │   ├── login.css
 │       │   ├── dashboard.css
 │       │   ├── users.css
+│       │   ├── products.css
 │       │   └── modal.css
 │       └── js/
-│           ├── api.js          # Wrapper fetch para llamadas al backend (get/post/put/del)
+│           ├── api.js          # Wrapper fetch para llamadas al backend (get/post/put/patch/del)
 │           ├── auth.js         # getToken, getUser, requireAuth, requireAdmin, logout
+│           ├── theme.js        # Alterna modo claro/oscuro (persistido en localStorage)
 │           ├── login.js        # login(), verifyTotp(), togglePassword()
 │           ├── forgot-password.js  # Flujo recuperación con TOTP
 │           ├── dashboard.js
-│           └── users.js        # Listar, crear, editar y desactivar usuarios
+│           ├── users.js        # Listar, crear, editar, activar/desactivar usuarios
+│           └── products.js     # Listar, crear, editar, eliminar productos + carga de imagen
 └── database/
     ├── init.sql                # Crea tablas e inserta 6 productos iniciales
     ├── migrations/
@@ -126,16 +131,26 @@ docker compose build --no-cache backend   # Reinstalar paquetes npm
 ## Base de datos
 ### Tablas
 - `users` — id, username, email, password (bcrypt), full_name, role (admin|cashier), active, totp_secret, totp_confirmed, totp_setup_deadline, must_change_password, created_at
-- `products` — id, name, price, active
+- `products` — id, name, price, active, image (TEXT, data URL base64 completo o NULL)
 - `sales` — id, user_id, customer_name, subtotal, discount, tax, total, payment_method (cash|card), status (open|completed|cancelled), promotion, created_at
 - `sale_items` — id, sale_id, product_id, quantity, unit_price, subtotal
 
 ### Productos iniciales
 Papas (₡800), Bolis (₡500), Empanadas (₡1200), Gelatinas (₡500), Coca Cola (₡1000), Agua (₡600)
 
+### CRUD de productos (a diferencia de usuarios, es borrado físico)
+`products.service.js`: `remove(id)` hace `DELETE FROM products` real, no borrado lógico. Si el producto tiene `sale_items` asociados, Postgres rechaza el `DELETE` por la foreign key (`sale_items.product_id → products.id`, sin `ON DELETE CASCADE`) y el servicio traduce ese error a "No se puede eliminar el producto: tiene ventas asociadas."
+
+La imagen se guarda como **data URL base64 completo** (`data:image/png;base64,...`) en la columna `image` (TEXT), no como archivo:
+- `POST/PUT /api/products` reciben `image` como ese mismo string, lo validan (formato + máximo 3MB decodificado) en `parseDataUrl()`.
+- `GET /api/products` (listado) NO incluye la imagen, solo `hasImage: boolean` — para no inflar el payload de la lista.
+- `GET /api/products/:id` sí incluye la imagen completa (útil para precargarla en el form de edición).
+- `GET /api/products/:id/image` decodifica el base64 y devuelve el binario real con el `Content-Type` correcto (`image/png`, `image/jpeg`, etc.) — **este endpoint es público** (sin `verifyToken`) porque una etiqueta `<img src="...">` no puede mandar el header `Authorization`; el frontend lo usa directo como `src` de la imagen.
+- El límite de `express.json()` en `src/index.js` se subió a `5mb` para admitir el base64 en el body (por defecto Express permite apenas 100kb).
+
 ### Roles
-- `admin` — acceso total incluyendo reportes y gestión de usuarios
-- `cashier` — acceso solo al POS (ventas)
+- `admin` — acceso total incluyendo reportes, gestión de usuarios y CRUD completo de productos
+- `cashier` — acceso al POS (ventas) y solo lectura del catálogo de productos
 
 ### Conexión
 El backend intenta conectar a **Neon primero** (si hay internet). Si falla, usa **PostgreSQL local** (Docker). Esto está en `src/config/database.js` usando `getSequelize()` y `getModels()`.
@@ -215,7 +230,7 @@ refactor: mejora sin cambio funcional
 | Eduardo Hernández Contreras | Desarrollador |
 
 ## Notas importantes
-- No hay `sequelize.sync()` — el esquema de BD se gestiona a mano con `database/init.sql` (instalación nueva) y `database/migrations/*.sql` (cambios sobre una BD existente). Si ya tenías el proyecto corriendo, ejecutá en orden `001_add_email_to_users.sql`, `002_add_totp_confirmation.sql` y `003_add_must_change_password.sql` contra tu BD local y Neon.
+- No hay `sequelize.sync()` — el esquema de BD se gestiona a mano con `database/init.sql` (instalación nueva) y `database/migrations/*.sql` (cambios sobre una BD existente). Si ya tenías el proyecto corriendo, ejecutá en orden `001_add_email_to_users.sql`, `002_add_totp_confirmation.sql`, `003_add_must_change_password.sql` y `004_add_image_to_products.sql` contra tu BD local y Neon.
 - Si agregás una dependencia nueva al backend (`package.json`), `docker compose build backend` no alcanza — el volumen anónimo `/app/node_modules` puede quedar con la versión vieja. Usá `docker compose up -d --force-recreate --renew-anon-volumes backend` después de buildear.
 - **NUNCA** subir el `.env` a GitHub — el `.gitignore` ya lo protege
 - Los modelos se inicializan con `initModels()` en `index.js` y se acceden con `getModels()` en los servicios

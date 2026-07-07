@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS products (
     id          SERIAL PRIMARY KEY,
     name        VARCHAR(100) NOT NULL,
     price       NUMERIC(10,2) NOT NULL,
-    active      BOOLEAN DEFAULT TRUE
+    active      BOOLEAN DEFAULT TRUE,
+    image       TEXT
 );
 
 CREATE TABLE IF NOT EXISTS sales (
@@ -57,6 +58,6 @@ INSERT INTO products (name, price) VALUES
 ON CONFLICT DO NOTHING;
 
 -- Usuario administrador por defecto (contraseña: Admin1234)
-INSERT INTO users (username, password, full_name, role) VALUES
-    ('admin', '$2a$10$placeholder_hash_cambiar_en_produccion', 'Administrador', 'admin')
+INSERT INTO users (username, email, password, full_name, role) VALUES
+    ('admin', 'admin@lamatamonchis.local', '$2a$10$placeholder_hash_cambiar_en_produccion', 'Administrador', 'admin')
 ON CONFLICT DO NOTHING;

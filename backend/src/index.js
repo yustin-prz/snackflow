@@ -18,7 +18,8 @@ const PORT = process.env.PORT || 3000;
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
-app.use(express.json());
+// Límite ampliado para admitir imágenes de producto en base64 en el body JSON
+app.use(express.json({ limit: '5mb' }));
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   customSiteTitle: 'SnackFlow POS API',
