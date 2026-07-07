@@ -112,23 +112,56 @@ function closeProductModal() {
   document.getElementById('product-modal').classList.remove('active');
 }
 
-function handleImageSelect(event) {
+const MAX_IMAGE_DIMENSION = 500; // px, en el lado más largo
+const IMAGE_JPEG_QUALITY = 0.75;
+
+// Redimensiona y comprime la imagen en el navegador antes de convertirla a base64,
+// para que la BD no crezca varios MB por cada foto que suba un admin.
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      let { width, height } = img;
+      if (width > MAX_IMAGE_DIMENSION || height > MAX_IMAGE_DIMENSION) {
+        const scale = MAX_IMAGE_DIMENSION / Math.max(width, height);
+        width = Math.round(width * scale);
+        height = Math.round(height * scale);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+      resolve(canvas.toDataURL('image/jpeg', IMAGE_JPEG_QUALITY));
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error('No se pudo leer la imagen.')); };
+    img.src = objectUrl;
+  });
+}
+
+async function handleImageSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
 
-  if (file.size > 3 * 1024 * 1024) {
-    alert('La imagen no puede pesar más de 3MB.');
+  if (file.size > 8 * 1024 * 1024) {
+    alert('La imagen es demasiado grande (máximo 8MB antes de comprimir).');
     event.target.value = '';
     return;
   }
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    selectedImageDataUrl = reader.result;
+  try {
+    selectedImageDataUrl = await compressImage(file);
     document.getElementById('product-image-preview').src = selectedImageDataUrl;
     document.getElementById('product-image-preview-wrapper').style.display = 'flex';
-  };
-  reader.readAsDataURL(file);
+  } catch (e) {
+    alert(e.message);
+    event.target.value = '';
+  }
 }
 
 function removeImage() {
