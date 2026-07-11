@@ -187,8 +187,8 @@ Formato del archivo (4 hojas):
 - **Productos** y **Cajeros** — mismo tratamiento de tabla, con un estilo de Excel distinto (`TableStyleMedium7`) para diferenciarlas visualmente de "Transacciones".
 
 ### Roles
-- `admin` — acceso total incluyendo reportes, gestión de usuarios y CRUD completo de productos
-- `cashier` — acceso al POS (ventas) y solo lectura del catálogo de productos
+- `admin` — acceso total: reportes, gestión de usuarios, y CRUD completo de productos (incluyendo eliminar)
+- `cashier` — puede crear ventas (Nueva venta) y agregar/editar productos (`POST`/`PUT /api/products`, sin `verifyAdmin`); **no** puede eliminar productos (`DELETE` sigue exigiendo `verifyAdmin`), ni entrar a usuarios o reportes
 
 ### Conexión
 El backend intenta conectar a **Neon primero** (si hay internet). Si falla, usa **PostgreSQL local** (Docker). Esto está en `src/config/database.js` usando `getSequelize()` y `getModels()`.

@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
   isAdmin = user.role === 'admin';
   document.getElementById('user-name').textContent = user.full_name || user.username;
   document.getElementById('role-badge').textContent = isAdmin ? 'Administrador' : 'Cajero';
-  if (isAdmin) document.getElementById('new-product-btn').style.display = 'inline-block';
+  // Cualquier usuario autenticado puede agregar/editar productos; eliminar sigue siendo solo admin.
+  document.getElementById('new-product-btn').style.display = 'inline-block';
 
   loadProducts();
 });
@@ -54,12 +55,10 @@ async function loadProducts() {
         <span class="product-name">${escapeHtml(p.name)}</span>
         <span class="product-price">${formatPrice(p.price)}</span>
         <span class="status ${p.active ? 'active' : 'inactive'}">${p.active ? 'Activo' : 'Inactivo'}</span>
-        ${isAdmin ? `
-          <div class="product-actions">
-            <button class="link-btn edit" onclick="openEditModal(${p.id})">Editar</button>
-            <button class="link-btn deactivate" onclick="deleteProduct(${p.id}, '${escapeHtml(p.name).replace(/'/g, "\\'")}')">Eliminar</button>
-          </div>
-        ` : ''}
+        <div class="product-actions">
+          <button class="link-btn edit" onclick="openEditModal(${p.id})">Editar</button>
+          ${isAdmin ? `<button class="link-btn deactivate" onclick="deleteProduct(${p.id}, '${escapeHtml(p.name).replace(/'/g, "\\'")}')">Eliminar</button>` : ''}
+        </div>
       </div>
     </div>
   `).join('');

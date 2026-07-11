@@ -7,7 +7,7 @@ const { verifyToken, verifyAdmin } = require('../middlewares/auth.middleware');
  * @swagger
  * tags:
  *   name: Productos
- *   description: Catálogo de productos (lectura para cualquier usuario autenticado, escritura solo administradores)
+ *   description: Catálogo de productos (lectura, alta y edición para cualquier usuario autenticado; eliminar es solo administradores)
  */
 
 /**
@@ -107,10 +107,8 @@ router.get('/:id', getById);
  *         description: Producto creado
  *       400:
  *         description: Datos inválidos
- *       403:
- *         description: Se requiere rol administrador
  */
-router.post('/', verifyAdmin, create);
+router.post('/', create);
 
 /**
  * @swagger
@@ -144,10 +142,8 @@ router.post('/', verifyAdmin, create);
  *         description: Producto actualizado
  *       400:
  *         description: Datos inválidos o producto no encontrado
- *       403:
- *         description: Se requiere rol administrador
  */
-router.put('/:id', verifyAdmin, update);
+router.put('/:id', update);
 
 /**
  * @swagger
