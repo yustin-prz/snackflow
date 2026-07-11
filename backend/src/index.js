@@ -9,6 +9,7 @@ const { initModels } = require('./models');
 
 const authRoutes     = require('./routes/auth.routes');
 const salesRoutes    = require('./routes/sales.routes');
+const saleItemRoutes = require('./routes/saleItem.routes');
 const productsRoutes = require('./routes/products.routes');
 const reportsRoutes  = require('./routes/reports.routes');
 const usersRoutes    = require('./routes/users.routes');
@@ -28,6 +29,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 
 app.use('/api/auth',     authRoutes);
 app.use('/api/sales',    salesRoutes);
+app.use('/api/sales',    saleItemRoutes);
 app.use('/api/products', productsRoutes);
 app.use('/api/reports',  reportsRoutes);
 app.use('/api/users',    usersRoutes);

@@ -10,14 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Acciones según rol
   const adminActions = [
-    { icon: '🧾', title: 'Nueva venta',  desc: 'Iniciar una nueva transacción', href: '/pos.html'     },
+    { icon: '🧾', title: 'Nueva venta',  desc: 'Iniciar una nueva transacción', href: '/nuevaVenta.html'},
     { icon: '📊', title: 'Reportes',     desc: 'Ver reportes de ventas',         href: '/reports.html' },
     { icon: '👥', title: 'Usuarios',     desc: 'Gestionar usuarios del sistema', href: '/users.html'   },
     { icon: '📦', title: 'Productos',    desc: 'Ver catálogo de productos',       href: '/products.html' },
   ];
 
   const cashierActions = [
-    { icon: '🧾', title: 'Nueva venta', desc: 'Iniciar una nueva transacción', href: '/pos.html' },
+    { icon: '🧾', title: 'Nueva venta', desc: 'Iniciar una nueva transacción', href: '/nuevaVenta.html' },
     { icon: '📦', title: 'Productos',   desc: 'Ver catálogo de productos',      href: '/products.html' },
   ];
 

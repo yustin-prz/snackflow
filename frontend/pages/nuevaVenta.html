@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnackFlow — Nueva venta</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo-icon.png">
+  <script src="/assets/js/theme.js"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/nuevaVenta.css">
+</head>
+<body>
+  <header>
+    <a class="header-brand" href="/dashboard.html">
+      <img src="/assets/img/logo.png" alt="La Matamonchis">
+      <h1>SnackFlow</h1>
+    </a>
+    <div class="header-right">
+      <span id="user-name"></span>
+      <span class="role-badge" id="role-badge"></span>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+      <button class="btn btn-outline" onclick="auth.logout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <div class="container pos-container">
+
+    <a class="back-link" href="/dashboard.html">&larr; Volver al panel</a>
+
+    <!-- Indicador de progreso -->
+    <ol class="stepper" id="stepper">
+      <li class="stepper-item" data-step="1">
+        <span class="stepper-dot">1</span>
+        <span class="stepper-label">Cliente</span>
+      </li>
+      <li class="stepper-line"></li>
+      <li class="stepper-item" data-step="2">
+        <span class="stepper-dot">2</span>
+        <span class="stepper-label">Pedido</span>
+      </li>
+      <li class="stepper-line"></li>
+      <li class="stepper-item" data-step="3">
+        <span class="stepper-dot">3</span>
+        <span class="stepper-label">Resumen</span>
+      </li>
+    </ol>
+
+    <!-- ===================== PASO 1: CLIENTE ===================== -->
+    <section class="pos-step" data-step="1">
+      <div class="pos-card pos-card-narrow">
+        <p class="section-title">Datos del cliente</p>
+
+        <div class="form-group">
+          <label for="cliente-nombre">Nombre <span class="opt">(opcional)</span></label>
+          <input type="text" id="cliente-nombre" placeholder="Ej. Juan Pérez" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="cliente-telefono">Teléfono <span class="opt">(opcional)</span></label>
+          <input type="tel" id="cliente-telefono" placeholder="Ej. 8888-8888" autocomplete="off">
+        </div>
+
+        <div class="form-group">
+          <label for="cliente-notas">Notas <span class="opt">(opcional)</span></label>
+          <textarea id="cliente-notas" rows="2" placeholder="Ej. sin cebolla, alergia a maní..."></textarea>
+        </div>
+      </div>
+
+      <div class="pos-actions">
+        <span></span>
+        <button class="btn btn-primary" id="btn-to-step2">Continuar &rarr;</button>
+      </div>
+    </section>
+
+    <!-- ===================== PASO 2: PEDIDO ===================== -->
+    <section class="pos-step" data-step="2">
+      <div class="pos-step2-grid">
+
+        <div>
+          <p class="section-title">Productos</p>
+          <div class="error-msg" id="products-error"></div>
+          <div class="product-grid" id="product-grid">
+            <p class="empty-state">Cargando productos...</p>
+          </div>
+        </div>
+
+        <aside class="cart-card">
+          <p class="section-title">Pedido actual</p>
+          <div class="cart-items" id="cart-items">
+            <p class="empty-state">Todavía no has agregado productos.</p>
+          </div>
+          <div class="cart-total-row">
+            <span>Subtotal</span>
+            <span id="cart-subtotal">₡0</span>
+          </div>
+        </aside>
+
+      </div>
+
+      <div class="pos-actions">
+        <button class="btn btn-outline" id="btn-to-step1">&larr; Atrás</button>
+        <button class="btn btn-primary" id="btn-to-step3">Continuar &rarr;</button>
+      </div>
+    </section>
+
+    <!-- ===================== PASO 3: RESUMEN ===================== -->
+    <section class="pos-step" data-step="3">
+      <div class="pos-step3-grid">
+
+        <div class="pos-card">
+          <p class="section-title">Cliente</p>
+          <dl class="summary-list" id="resumen-cliente"></dl>
+
+          <p class="section-title summary-spacer">Productos</p>
+          <div class="cart-items" id="resumen-items"></div>
+        </div>
+
+        <div class="pos-card pos-card-narrow">
+          <p class="section-title">Cobro</p>
+
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span id="resumen-subtotal">₡0</span>
+          </div>
+          <div class="summary-row">
+            <span>IVA (13%)</span>
+            <span id="resumen-iva">₡0</span>
+          </div>
+          <div class="summary-row summary-total">
+            <span>Total</span>
+            <span id="resumen-total">₡0</span>
+          </div>
+
+          <div class="form-group summary-spacer">
+            <label>Método de pago</label>
+            <div class="option-row" id="pago-options">
+              <button type="button" class="option-btn" data-value="efectivo">💵 Efectivo</button>
+              <button type="button" class="option-btn" data-value="tarjeta">💳 Tarjeta</button>
+            </div>
+          </div>
+
+          <p class="field-error" id="pago-error"></p>
+
+          <button class="btn btn-primary btn-block" id="btn-confirmar">Confirmar venta</button>
+          <p class="pos-note">El registro de la venta aún no está conectado al backend — esta pantalla es solo el cascarón.</p>
+        </div>
+
+      </div>
+
+      <div class="pos-actions">
+        <button class="btn btn-outline" id="btn-to-step2-back">&larr; Atrás</button>
+        <span></span>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/nuevaVenta.js"></script>
+</body>
+</html>
