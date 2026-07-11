@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS sales (
     id              SERIAL PRIMARY KEY,
     user_id         INTEGER REFERENCES users(id),
     customer_name   VARCHAR(100),
+    customer_phone  VARCHAR(30),
+    notes           TEXT,
     subtotal        NUMERIC(10,2) NOT NULL DEFAULT 0,
     discount        NUMERIC(10,2) NOT NULL DEFAULT 0,
     tax             NUMERIC(10,2) NOT NULL DEFAULT 0,

@@ -1,189 +1,118 @@
 const { getModels } = require('../src/models');
 const SaleService = require('./sale.service');
 
-
 class SaleItemService {
 
-    async listItems(saleId) {
+  async listItems(saleId) {
+    const { Sale, SaleItem, Product } = getModels();
 
-        const { Sale, SaleItem, Product } = getModels();
+    const sale = await Sale.findByPk(saleId);
+    if (!sale) throw new Error('Venta no encontrada.');
 
-        // Verificar que exista la venta
-        const sale = await Sale.findByPk(saleId);
+    const items = await SaleItem.findAll({
+      where: { sale_id: saleId },
+      include: [{ model: Product }],
+      order: [['id', 'ASC']]
+    });
 
-        if (!sale) {
-            throw new Error("Venta no encontrada.");
-        }
+    return items.map(item => ({
+      id: item.id,
+      product_id: item.product_id,
+      product_name: item.Product.name,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      subtotal: item.subtotal
+    }));
+  }
 
-        // Obtener los productos de la venta
-        const items = await SaleItem.findAll({
-            where: {
-                sale_id: saleId
-            },
-            include: [
-                {
-                    model: Product
-                }
-            ],
-            order: [["id", "ASC"]]
-        });
+  async addItem(saleId, productId, quantity) {
+    const { Sale, Product, SaleItem } = getModels();
 
-        return items.map(item => ({
-            id: item.id,
-            product_id: item.product_id,
-            product_name: item.Product.name,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            subtotal: item.subtotal
-        }));
+    const sale = await Sale.findByPk(saleId);
+    if (!sale) throw new Error('Venta no encontrada.');
+    if (sale.status !== 'open') throw new Error('La venta ya fue cerrada.');
 
+    const product = await Product.findByPk(productId);
+    if (!product) throw new Error('Producto no encontrado.');
+    if (!product.active) throw new Error('Este producto no está disponible para la venta.');
+
+    if (!quantity || quantity <= 0) throw new Error('La cantidad debe ser mayor que cero.');
+
+    const unitPrice = Number(product.price);
+
+    let item = await SaleItem.findOne({ where: { sale_id: saleId, product_id: productId } });
+
+    if (item) {
+      item.quantity += quantity;
+      item.subtotal = item.quantity * Number(item.unit_price);
+      await item.save();
+    } else {
+      item = await SaleItem.create({
+        sale_id: saleId,
+        product_id: productId,
+        quantity,
+        unit_price: unitPrice,
+        subtotal: unitPrice * quantity
+      });
     }
 
-    async addItem(pSaleId, pProductId, pQuantity) {
+    await SaleService.recalculateSale(saleId);
 
-        const { Sale, Product, SaleItem } = getModels();
+    return {
+      id: item.id,
+      sale_id: item.sale_id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      subtotal: item.subtotal
+    };
+  }
 
-        const sale = await Sale.findByPk(pSaleId);
+  async updateItem(itemId, quantity) {
+    const { SaleItem, Sale } = getModels();
 
-        if (!sale) {
-            throw new Error("Venta no encontrada.");
-        }
+    const item = await SaleItem.findByPk(itemId);
+    if (!item) throw new Error('Detalle de venta no encontrado.');
 
-        if (sale.status !== "open") {
-            throw new Error("La venta ya fue cerrada.");
-        }
+    const sale = await Sale.findByPk(item.sale_id);
+    if (!sale) throw new Error('Venta no encontrada.');
+    if (sale.status !== 'open') throw new Error('La venta ya fue cerrada.');
 
-        const product = await Product.findByPk(pProductId);
+    if (!quantity || quantity <= 0) throw new Error('La cantidad debe ser mayor que cero.');
 
-        if (!product) {
-            throw new Error("Producto no encontrado.");
-        }
+    item.quantity = quantity;
+    item.subtotal = quantity * Number(item.unit_price);
+    await item.save();
 
-        if (!pQuantity || pQuantity <= 0) {
-            throw new Error("La cantidad debe ser mayor que cero.");
-        }
+    await SaleService.recalculateSale(item.sale_id);
 
-        const unitPrice = Number(product.price);
+    return {
+      id: item.id,
+      sale_id: item.sale_id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      subtotal: item.subtotal
+    };
+  }
 
-        let item = await SaleItem.findOne({
-            where: {
-                sale_id: pSaleId,
-                product_id: pProductId
-            }
-        });
+  async removeItem(itemId) {
+    const { SaleItem, Sale } = getModels();
 
-        if (item) {
+    const item = await SaleItem.findByPk(itemId);
+    if (!item) throw new Error('Detalle de venta no encontrado.');
 
-            item.quantity += pQuantity;
-            item.subtotal = item.quantity * Number(item.unit_price);
+    const sale = await Sale.findByPk(item.sale_id);
+    if (!sale) throw new Error('Venta no encontrada.');
+    if (sale.status !== 'open') throw new Error('La venta ya fue cerrada.');
 
-            await item.save();
+    const saleId = item.sale_id;
+    await item.destroy();
+    await SaleService.recalculateSale(saleId);
 
-        } else {
+    return { message: 'Producto eliminado correctamente.' };
+  }
 
-            item = await SaleItem.create({
-                sale_id: pSaleId,
-                product_id: pProductId,
-                quantity: pQuantity,
-                unit_price: unitPrice,
-                subtotal: unitPrice * pQuantity
-            });
-
-        }
-
-        await SaleService.recalculateSale(pSaleId);
-
-        return {
-            id: item.id,
-            sale_id: item.sale_id,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            subtotal: item.subtotal
-        };
-
-    }
-    async updateItem(pItemId, pQuantity) {
-
-        const { SaleItem, Sale } = getModels();
-
-        // Buscar el detalle
-        const item = await SaleItem.findByPk(pItemId);
-
-        if (!item) {
-            throw new Error("Detalle de venta no encontrado.");
-        }
-
-        // Buscar la venta
-        const sale = await Sale.findByPk(item.sale_id);
-
-        if (!sale) {
-            throw new Error("Venta no encontrada.");
-        }
-
-        // Verificar que siga abierta
-        if (sale.status !== "open") {
-            throw new Error("La venta ya fue cerrada.");
-        }
-
-        // Validar cantidad
-        if (!pQuantity || pQuantity <= 0) {
-            throw new Error("La cantidad debe ser mayor que cero.");
-        }
-
-        // Actualizar el detalle
-        item.quantity = pQuantity;
-        item.subtotal = pQuantity * Number(item.unit_price);
-
-        await item.save();
-
-        // Recalcular la factura
-        await SaleService.recalculateSale(item.sale_id);
-
-        return {
-            id: item.id,
-            sale_id: item.sale_id,
-            product_id: item.product_id,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            subtotal: item.subtotal
-        };
-    }
-
-    async removeItem(pItemId) {
-
-        const { SaleItem, Sale } = getModels();
-
-        // Buscar el detalle
-        const item = await SaleItem.findByPk(pItemId);
-
-        if (!item) {
-            throw new Error("Detalle de venta no encontrado.");
-        }
-
-        // Buscar la venta
-        const sale = await Sale.findByPk(item.sale_id);
-
-        if (!sale) {
-            throw new Error("Venta no encontrada.");
-        }
-
-        // Verificar que siga abierta
-        if (sale.status !== "open") {
-            throw new Error("La venta ya fue cerrada.");
-        }
-
-        // Eliminar el detalle
-        await item.destroy();
-
-        // Recalcular la factura
-        await SaleService.recalculateSale(item.sale_id);
-
-        return {
-            message: "Producto eliminado correctamente."
-        };
-
-    }
 }
 
 module.exports = new SaleItemService();

@@ -63,14 +63,18 @@ const options = {
           type: 'object',
           properties: {
             id:             { type: 'integer', example: 1 },
+            user_id:        { type: 'integer', example: 3 },
             customer_name:  { type: 'string',  example: 'Juan Pérez' },
+            customer_phone: { type: 'string',  example: '8888-8888' },
+            notes:          { type: 'string',  example: 'Sin cebolla' },
             subtotal:       { type: 'number',  example: 2400.00 },
             discount:       { type: 'number',  example: 0 },
             tax:            { type: 'number',  example: 312.00 },
             total:          { type: 'number',  example: 2712.00 },
-            payment_method: { type: 'string',  enum: ['cash', 'card'] },
+            payment_method: { type: 'string',  enum: ['cash', 'card'], nullable: true },
             status:         { type: 'string',  enum: ['open', 'completed', 'cancelled'] },
-            promotion:      { type: 'string',  example: '2x1' }
+            promotion:      { type: 'string',  example: '2x1', nullable: true },
+            created_at:     { type: 'string',  format: 'date-time' }
           }
         },
         Error: {

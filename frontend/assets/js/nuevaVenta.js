@@ -207,21 +207,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
   $('btn-to-step2-back').addEventListener('click', () => goToStep(2));
 
-  $('btn-confirmar').addEventListener('click', () => {
+  // Vuelve el wizard a su estado inicial para poder registrar otra venta.
+  function resetWizard() {
+    state.cliente = { nombre: '', telefono: '', notas: '' };
+    state.carrito = {};
+    state.metodoPago = null;
+
+    $('cliente-nombre').value = '';
+    $('cliente-telefono').value = '';
+    $('cliente-notas').value = '';
+    document.querySelectorAll('#pago-options .option-btn').forEach(b => b.classList.remove('is-selected'));
+    $('pago-error').textContent = '';
+
+    renderCart();
+    goToStep(1);
+  }
+
+  $('btn-confirmar').addEventListener('click', async () => {
     if (!state.metodoPago) {
       $('pago-error').textContent = 'Elegí un método de pago para confirmar la venta.';
       return;
     }
 
-    // TODO: reemplazar por POST /api/sales cuando exista el módulo de ventas.
-    console.log('Venta (mock):', {
-      cliente: state.cliente,
-      items: carritoItems(),
-      metodoPago: state.metodoPago,
-      subtotal: subtotal(),
-    });
+    const btn = $('btn-confirmar');
+    $('pago-error').textContent = '';
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
 
-    alert('Cascarón de venta completo. Todavía falta conectar el backend.');
+    try {
+      // 1. Crear el encabezado de la venta (el usuario se toma del token en el backend)
+      const { ok: okSale, data: saleData } = await api.post('/sales', {
+        customer_name: state.cliente.nombre || null,
+        customer_phone: state.cliente.telefono || null,
+        notes: state.cliente.notas || null
+      });
+      if (!okSale) throw new Error(saleData.message || 'No se pudo crear la venta.');
+
+      const saleId = saleData.id;
+
+      // 2. Agregar cada producto del carrito a la venta
+      for (const item of carritoItems()) {
+        const { ok: okItem, data: itemData } = await api.post(`/sales/${saleId}/items`, {
+          product_id: item.id,
+          quantity: item.qty
+        });
+        if (!okItem) throw new Error(itemData.message || `No se pudo agregar "${item.name}" a la venta.`);
+      }
+
+      // 3. Cerrar la venta con el método de pago elegido
+      const paymentMethod = state.metodoPago === 'tarjeta' ? 'card' : 'cash';
+      const { ok: okComplete, data: completeData } = await api.patch(`/sales/${saleId}/complete`, {
+        payment_method: paymentMethod
+      });
+      if (!okComplete) throw new Error(completeData.message || 'No se pudo cerrar la venta.');
+
+      alert(`Venta #${saleId} registrada correctamente. Total: ${money(completeData.total)}`);
+      resetWizard();
+    } catch (e) {
+      $('pago-error').textContent = e.message || 'Ocurrió un error al registrar la venta.';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Confirmar venta';
+    }
   });
 
   // ===================== Init =====================

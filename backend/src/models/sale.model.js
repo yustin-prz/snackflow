@@ -15,6 +15,14 @@ const Sale = sequelize.define('Sale', {
     type: DataTypes.STRING(100),
     allowNull: true
   },
+  customer_phone: {
+    type: DataTypes.STRING(30),
+    allowNull: true
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   subtotal: {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0

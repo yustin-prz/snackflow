@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnackFlow — Reportes</title>
+  <link rel="icon" type="image/png" href="/assets/img/logo-icon.png">
+  <script src="/assets/js/theme.js"></script>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <link rel="stylesheet" href="/assets/css/dashboard.css">
+  <link rel="stylesheet" href="/assets/css/users.css">
+  <link rel="stylesheet" href="/assets/css/reports.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <a class="header-brand" href="/dashboard.html">
+      <img src="/assets/img/logo.png" alt="La Matamonchis">
+      <h1>SnackFlow</h1>
+    </a>
+    <div class="header-right">
+      <span id="user-name"></span>
+      <span class="role-badge" id="role-badge"></span>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar tema">
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+        </svg>
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+      </button>
+      <button class="btn btn-outline" onclick="auth.logout()">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <div class="container reports-container">
+    <a href="/dashboard.html" class="back-link">← Volver al dashboard</a>
+
+    <div class="page-header">
+      <div>
+        <p class="welcome">📊 Reportes</p>
+        <p class="section-subtitle">Ventas de La Matamonchis por período</p>
+      </div>
+      <button class="btn btn-primary" id="btn-excel">⬇ Descargar Excel</button>
+    </div>
+
+    <!-- Filtro de fechas -->
+    <div class="table-card reports-filter-bar">
+      <div class="date-presets" id="date-presets">
+        <button type="button" class="preset-chip" data-days="0">Hoy</button>
+        <button type="button" class="preset-chip" data-days="7">7 días</button>
+        <button type="button" class="preset-chip is-active" data-days="30">30 días</button>
+        <button type="button" class="preset-chip" data-days="90">90 días</button>
+      </div>
+      <div class="reports-filter-dates">
+        <div class="form-group">
+          <label for="filter-from">Desde</label>
+          <input type="date" id="filter-from">
+        </div>
+        <div class="form-group">
+          <label for="filter-to">Hasta</label>
+          <input type="date" id="filter-to">
+        </div>
+        <button class="btn btn-outline" id="btn-generar">Generar</button>
+      </div>
+      <span class="error-msg" id="reports-error"></span>
+    </div>
+
+    <!-- KPIs -->
+    <div class="stats reports-kpis">
+      <div class="stat-card green">
+        <div class="stat-label">🧾 Transacciones</div>
+        <div class="stat-value" id="kpi-count">—</div>
+        <div class="stat-sub">ventas completadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">💰 Total recaudado</div>
+        <div class="stat-value" id="kpi-total">—</div>
+        <div class="stat-sub">en el período</div>
+      </div>
+      <div class="stat-card amber">
+        <div class="stat-label">🎯 Ticket promedio</div>
+        <div class="stat-value" id="kpi-avg">—</div>
+        <div class="stat-sub">por venta</div>
+      </div>
+    </div>
+
+    <!-- Gráficos: grid 2x2 estilo dashboard -->
+    <div class="reports-charts-grid">
+      <div class="reports-chart-card accent-gold">
+        <p class="section-title">📈 Ventas por día</p>
+        <div class="chart-wrap"><canvas id="chart-by-day"></canvas></div>
+      </div>
+      <div class="reports-chart-card accent-cyan">
+        <p class="section-title">💳 Método de pago</p>
+        <div class="chart-wrap"><canvas id="chart-payment"></canvas></div>
+      </div>
+      <div class="reports-chart-card accent-gold">
+        <p class="section-title">🍽️ Productos más vendidos</p>
+        <div class="chart-wrap"><canvas id="chart-by-product"></canvas></div>
+      </div>
+      <div class="reports-chart-card accent-cyan">
+        <p class="section-title">👤 Ventas por cajero</p>
+        <div class="chart-wrap"><canvas id="chart-by-user"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Detalle -->
+    <p class="section-title">Detalle de transacciones</p>
+    <div class="table-card">
+      <table id="tx-table-el">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Fecha</th>
+            <th>Cliente</th>
+            <th>Cajero</th>
+            <th>Pago</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="tx-table">
+          <tr><td colspan="6" class="empty-state">Cargando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/reports.js"></script>
+</body>
+</html>
