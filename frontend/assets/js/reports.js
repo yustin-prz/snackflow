@@ -27,7 +27,7 @@ function chartTheme() {
 }
 
 function money(n) {
-  return '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 0 });
+  return '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function escapeHtml(str) {
@@ -193,12 +193,12 @@ function renderTable(data) {
     .reverse()
     .map(t => `
       <tr>
-        <td>#${t.id}</td>
-        <td>${new Date(t.created_at).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
-        <td class="truncate" title="${escapeHtml(t.customer_name || 'Cliente general')}">${escapeHtml(t.customer_name || 'Cliente general')}</td>
-        <td class="truncate" title="${escapeHtml(t.user.full_name)}">${escapeHtml(t.user.full_name)}</td>
-        <td>${PAYMENT_LABELS[t.payment_method] || '—'}</td>
-        <td>${money(t.total)}</td>
+        <td data-label="#">#${t.id}</td>
+        <td data-label="Fecha">${new Date(t.created_at).toLocaleString('es-CR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+        <td class="truncate" data-label="Cliente" title="${escapeHtml(t.customer_name || 'Cliente general')}">${escapeHtml(t.customer_name || 'Cliente general')}</td>
+        <td class="truncate" data-label="Cajero" title="${escapeHtml(t.user.full_name)}">${escapeHtml(t.user.full_name)}</td>
+        <td data-label="Pago">${PAYMENT_LABELS[t.payment_method] || '—'}</td>
+        <td data-label="Total">${money(t.total)}</td>
       </tr>
     `).join('');
 }

@@ -36,6 +36,19 @@ const changeTempPassword = async (req, res) => {
   }
 };
 
+const checkUser = async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username)
+      return res.status(400).json({ message: 'El nombre de usuario es requerido.' });
+
+    const result = await authService.userExists(username);
+    res.json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 const setupTotp = async (req, res) => {
   try {
     const { username } = req.user;
@@ -61,4 +74,4 @@ const verifyTotpAndReset = async (req, res) => {
   }
 };
 
-module.exports = { login, changeTempPassword, setupTotp, verifyTotpAndReset };
+module.exports = { login, changeTempPassword, checkUser, setupTotp, verifyTotpAndReset };

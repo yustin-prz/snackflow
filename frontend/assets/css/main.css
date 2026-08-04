@@ -9,9 +9,9 @@
 
   --text-dark:   #3a2c05;   /* texto oscuro cálido, para usar sobre fondos dorados */
   --text-body:   #444;
-  --text-muted:  #8a8577;
-  --text-faint:  #aaaaaa;
-  --text-faint-2: #bbbbbb;
+  --text-muted:  #6b6558;  /* oscurecido vs. el tono original (contraste 3.68:1 fallaba AA en texto normal) */
+  --text-faint:  #7a756c;  /* idem — el gris claro original apenas llegaba a 2.3:1 sobre blanco */
+  --text-faint-2: #7a756c;
   --bg-app:      #faf8f3;   /* fondo cálido, no azul frío */
   --card-bg:     #ffffff;
   --border-soft: #ece7d8;
@@ -28,16 +28,19 @@
   --shadow-modal: 0 8px 32px rgba(0,0,0,0.15);
 }
 
-/* Tema oscuro — más cómodo para uso prolongado, mismo dorado pero atenuado */
+/* Tema oscuro — más cómodo para uso prolongado, mismo dorado pero atenuado.
+   El degradé del header se oscureció (era #8a6a08→#b8860b): con el texto claro
+   encima, el extremo más claro (#b8860b) daba apenas 2.4:1 de contraste — bien
+   por debajo del mínimo de 4.5:1 para texto normal. */
 [data-theme="dark"] {
-  --brand-gradient:    linear-gradient(135deg, #8a6a08, #b8860b);
+  --brand-gradient:    linear-gradient(135deg, #6b5406, #57430a);
   --brand-gray:        #2a2618;
 
   --text-dark:   #fbdb6b;
   --text-body:   #d9d3c2;
   --text-muted:  #a89f88;
-  --text-faint:  #7d7566;
-  --text-faint-2: #6b6455;
+  --text-faint:  #8f8676;  /* el original (#7d7566) daba 3.7:1, por debajo del mínimo AA */
+  --text-faint-2: #8f8676;
   --bg-app:      #14120c;
   --card-bg:     #1f1c14;
   --border-soft: #33301f;
@@ -46,9 +49,13 @@
   --border-row-2: #211e14;
   --border-card: #33301f;
 
-  --status-green-bg: #10332a;  --status-green-text: #5fd9ae;
-  --status-red-bg:   #3a1c1c;  --status-red-text:   #ff8a8a;
-  --status-amber-bg: #3a2c0a;  --status-amber-text: #f5c76e;
+  /* Los fondos originales (#10332a, #3a1c1c, #3a2c0a) casi no se distinguían
+     de --card-bg (#1f1c14, separación ~1.2:1) — la etiqueta se veía como una
+     mancha en vez de un badge. Se aclararon para que resalten de la tarjeta
+     mientras el texto se mantiene ≥4.5:1 de contraste. */
+  --status-green-bg: #155c3d;  --status-green-text: #5fd9ae;
+  --status-red-bg:   #853232;  --status-red-text:   #ffadad;
+  --status-amber-bg: #6b5313;  --status-amber-text: #f5c76e;
 
   --shadow-card: 0 2px 12px rgba(0,0,0,0.35);
   --shadow-modal: 0 8px 32px rgba(0,0,0,0.5);
@@ -72,6 +79,7 @@ body {
 
 /* Header */
 header {
+  position: relative;
   background: var(--brand-gradient);
   color: var(--text-dark);
   padding: 12px 28px;
@@ -106,7 +114,7 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
   gap: 16px;
 }
 
-.header-right span { font-size: 13px; opacity: 0.85; }
+.header-menu-username { font-size: 13px; opacity: 0.85; }
 
 .role-badge {
   font-size: 11px;
@@ -116,8 +124,9 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
   background: rgba(58, 44, 5, 0.14);
 }
 
-/* Botón de tema (sol/luna) */
-.theme-toggle {
+/* Botón de tema (sol/luna) y botón de menú (hamburguesa, solo celular) */
+.theme-toggle,
+.menu-toggle {
   background: rgba(58, 44, 5, 0.12);
   border: none;
   cursor: pointer;
@@ -132,10 +141,21 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
   flex-shrink: 0;
 }
 
-.theme-toggle:hover { background: rgba(58, 44, 5, 0.22); }
+.theme-toggle:hover,
+.menu-toggle:hover { background: rgba(58, 44, 5, 0.22); }
 .theme-toggle .icon-moon { display: none; }
 [data-theme="dark"] .theme-toggle .icon-sun  { display: none; }
 [data-theme="dark"] .theme-toggle .icon-moon { display: block; }
+
+/* El botón de menú solo existe visualmente en celular (ver media query);
+   en tablet/desktop el contenido de .header-menu va inline como antes. */
+.menu-toggle { display: none; }
+
+.header-menu {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
 
 /* Botones */
 .btn {
@@ -193,6 +213,11 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
   font-weight: 600;
   padding: 2px 10px;
   border-radius: 99px;
+  /* Como hijo directo de un flex-column (p.ej. .product-body) el badge se
+     estira a todo el ancho por el align-items:stretch por defecto — esto lo
+     fuerza a quedarse del tamaño de su contenido en cualquier contenedor. */
+  align-self: flex-start;
+  flex-shrink: 0;
 }
 
 .status.completed { background: var(--status-green-bg); color: var(--status-green-text); }
@@ -208,4 +233,170 @@ header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
   font-size: 13px;
   margin-bottom: 16px;
   display: none;
+}
+
+/* Volver al panel — es un botón (no un link de texto) para que tenga un
+   área de toque cómoda en tablet/celular, no solo en mouse. */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  box-sizing: border-box;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+  text-decoration: none;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-card);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.back-link:hover {
+  border-color: var(--brand-gold);
+  box-shadow: 0 2px 10px rgba(249, 195, 7, 0.18);
+}
+
+/* Tablas: en vez de comprimir columnas hasta que sean ilegibles, en pantallas
+   angostas se deja scroll horizontal dentro de la tarjeta. */
+.table-card {
+  overflow-x: auto;
+}
+
+/* ===================== Responsivo — celular en vertical ===================== */
+@media (max-width: 600px) {
+  header {
+    padding: 10px 14px;
+  }
+
+  header h1 { font-size: 16px; }
+
+  .header-brand img { height: 28px; width: 28px; }
+
+  .header-right { gap: 8px; }
+
+  /* En celular, usuario/rol/cerrar sesión se esconden detrás del botón de
+     menú (☰) en vez de amontonarse en la barra del header. */
+  .menu-toggle { display: flex; }
+
+  .header-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 14px;
+    left: 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    background: var(--card-bg);
+    border: 1.5px solid var(--border-card);
+    border-radius: 10px;
+    box-shadow: var(--shadow-modal);
+    padding: 16px;
+    z-index: 60;
+  }
+
+  .header-menu.open { display: flex; }
+
+  .header-menu-username {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+    opacity: 1;
+  }
+
+  .header-menu .role-badge { align-self: flex-start; }
+
+  .header-menu .btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .container {
+    margin: 16px auto;
+    padding: 0 14px;
+  }
+
+  .card { padding: 16px; }
+
+  /* Objetivo táctil mínimo recomendado (~44px) en vez del tamaño de escritorio. */
+  .btn {
+    padding: 12px 18px;
+    min-height: 44px;
+  }
+
+  table { font-size: 12px; }
+}
+
+/* Tablas con muchas columnas (ventas, usuarios, transacciones): por debajo
+   de 900px (celular Y tablet) obligar a hacer scroll horizontal para leer
+   una fila se ve mal, así que cada <tr> se convierte en una tarjeta y cada
+   <td> se apila con su encabezado como etiqueta (via data-label, puesto por
+   el JS que arma las filas). Esto reemplaza cualquier ancho mínimo/scroll
+   que se haya definido para estas tablas en desktop. */
+@media (max-width: 900px) {
+  table.mobile-cards { min-width: 0 !important; table-layout: auto !important; }
+
+  table.mobile-cards thead { display: none; }
+
+  table.mobile-cards,
+  table.mobile-cards tbody,
+  table.mobile-cards tr {
+    display: block;
+    width: 100%;
+  }
+
+  table.mobile-cards tr {
+    background: var(--card-bg);
+    border: 1px solid var(--border-card);
+    border-radius: 10px;
+    padding: 4px 14px;
+    margin-bottom: 10px;
+  }
+
+  table.mobile-cards td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border-row-2);
+    text-align: right;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  table.mobile-cards td:last-child { border-bottom: none; }
+
+  table.mobile-cards td::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    text-align: left;
+  }
+
+  /* Fila de "cargando…" / "no hay datos": ocupa todo el ancho, sin la
+     etiqueta ni el layout de dos columnas de una fila normal. */
+  table.mobile-cards td.empty-state {
+    display: block;
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  table.mobile-cards td.empty-state::before { content: none; }
+
+  /* .table-actions ya trae sus propios botones alineados; que se vean bien
+     apilados a la derecha en vez de forzados en una sola línea angosta. */
+  table.mobile-cards td[data-label="Acciones"] { align-items: flex-start; }
+  table.mobile-cards .table-actions { justify-content: flex-end; }
 }

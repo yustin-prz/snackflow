@@ -21,7 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ===================== Helpers =====================
   const $ = (id) => document.getElementById(id);
-  const money = (n) => '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 0 });
+  const money = (n) => '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const round2 = (n) => Math.round(n * 100) / 100;
 
   function escapeHtml(str) {
     const div = document.createElement('div');
@@ -103,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
       card.innerHTML = `
         <div class="product-thumb">
           ${product.hasImage
-            ? `<img src="/api/products/${product.id}/image" alt="${escapeHtml(product.name)}">`
+            ? `<img src="/api/products/${product.id}/image?v=${product.imageVersion}" alt="${escapeHtml(product.name)}">`
             : `<span class="placeholder-icon">🍽️</span>`}
         </div>
         <div class="product-body">
@@ -196,9 +197,12 @@ document.addEventListener('DOMContentLoaded', () => {
       itemsContainer.appendChild(row);
     });
 
-    const sub = subtotal();
-    const iva = Math.round(sub * IVA_RATE);
-    const total = sub + iva;
+    // Los precios de los productos ya incluyen el 13% de IVA, así que el
+    // total a cobrar es la suma de los items tal cual (sin sumarle IVA aparte);
+    // el IVA solo se desglosa a partir de ese monto para mostrarlo en el resumen.
+    const total = subtotal();
+    const sub = round2(total / (1 + IVA_RATE));
+    const iva = round2(total - sub);
 
     $('resumen-subtotal').textContent = money(sub);
     $('resumen-iva').textContent      = money(iva);

@@ -95,6 +95,10 @@ class SaleService {
   }
 
   // Recalcula subtotal/impuesto/total a partir de los sale_items actuales.
+  // El precio de cada producto ya incluye el 13% de IVA (lo que se ingresa al
+  // crear el producto es el precio final al público), así que el IVA no se
+  // suma aparte: se extrae del monto de los items para mostrarlo desglosado,
+  // y el total cobrado es ese mismo monto (menos el descuento, si aplica).
   async recalculateSale(saleId) {
     const { Sale, SaleItem } = getModels();
 
@@ -103,14 +107,15 @@ class SaleService {
 
     const items = await SaleItem.findAll({ where: { sale_id: saleId } });
 
-    const subtotal = items.reduce((sum, item) => sum + Number(item.subtotal), 0);
+    const itemsTotal = items.reduce((sum, item) => sum + Number(item.subtotal), 0);
     const discount = 0; // todavía no hay descuentos/promociones (HU-05/HU-06)
-    const tax = round2((subtotal - discount) * TAX_RATE);
-    const total = round2(subtotal - discount + tax);
+    const total = round2(itemsTotal - discount);
+    const subtotal = round2(total / (1 + TAX_RATE));
+    const tax = round2(total - subtotal);
 
-    await sale.update({ subtotal: round2(subtotal), discount, tax, total });
+    await sale.update({ subtotal, discount, tax, total });
 
-    return { subtotal: round2(subtotal), discount, tax, total };
+    return { subtotal, discount, tax, total };
   }
 
   // Cierra la venta: fija el método de pago y pasa el estado a "completed".

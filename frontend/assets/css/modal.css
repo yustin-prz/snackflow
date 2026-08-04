@@ -182,3 +182,9 @@
 
 .step.active  { background: var(--brand-gold); }
 .step.done    { background: #1D9E75; }
+
+@media (max-width: 480px) {
+  .modal-overlay { padding: 16px; }
+  .modal { padding: 22px; max-width: 100%; }
+  .qr-container img { width: 150px; height: 150px; }
+}

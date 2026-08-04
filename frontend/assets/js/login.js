@@ -1,6 +1,16 @@
 let pendingUsername = '';
 let pendingPassword = '';
 
+document.addEventListener('DOMContentLoaded', () => {
+  if (new URLSearchParams(window.location.search).get('reason') === 'idle') {
+    const errorMsg = document.getElementById('error-msg');
+    errorMsg.textContent = 'Tu sesión se cerró por inactividad (10 min sin uso). Ingresá de nuevo.';
+    errorMsg.style.display = 'block';
+    // Limpia el ?reason=idle de la URL para que no reaparezca el mensaje si se recarga la página.
+    history.replaceState(null, '', window.location.pathname);
+  }
+});
+
 async function login() {
   const username = document.getElementById('username').value.trim();
   const password  = document.getElementById('password').value;

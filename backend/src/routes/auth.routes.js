@@ -1,7 +1,7 @@
 const express   = require('express');
 const router    = express.Router();
 const rateLimit = require('express-rate-limit');
-const { login, changeTempPassword, setupTotp, verifyTotpAndReset } = require('../controllers/auth.controller');
+const { login, changeTempPassword, checkUser, setupTotp, verifyTotpAndReset } = require('../controllers/auth.controller');
 const { verifyToken } = require('../middlewares/auth.middleware');
 
 const loginLimiter = rateLimit({
@@ -121,6 +121,39 @@ router.post('/login', loginLimiter, login);
  *         description: Error al generar el QR
  */
 router.post('/setup-totp', verifyToken, setupTotp);
+
+/**
+ * @swagger
+ * /api/auth/check-user:
+ *   post:
+ *     summary: Verificar si un nombre de usuario existe (paso 1 de recuperar contraseña)
+ *     tags: [Autenticación]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username]
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 example: admin
+ *     responses:
+ *       200:
+ *         description: Indica si el usuario existe
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 exists:
+ *                   type: boolean
+ *       429:
+ *         description: Demasiados intentos
+ */
+router.post('/check-user', resetLimiter, checkUser);
 
 /**
  * @swagger

@@ -116,3 +116,13 @@
 #tx-table-el th:nth-child(4) { width: 22%; }
 #tx-table-el th:nth-child(5) { width: 14%; }
 #tx-table-el th:nth-child(6) { width: 14%; }
+
+/* Por debajo de 900px la tabla de transacciones se convierte en tarjetas
+   apiladas — ver table.mobile-cards en main.css. */
+
+@media (max-width: 600px) {
+  .reports-filter-bar { padding: 14px 16px; }
+  .reports-chart-card { padding: 14px 16px; }
+  .chart-wrap { height: 200px; }
+  .page-header .btn#btn-excel { width: 100%; }
+}

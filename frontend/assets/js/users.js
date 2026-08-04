@@ -58,14 +58,14 @@ async function loadUsers() {
 
     return `
     <tr>
-      <td>${u.id}</td>
-      <td class="truncate" title="${escapeHtml(u.username)}">${escapeHtml(u.username)}</td>
-      <td class="truncate" title="${escapeHtml(u.email)}">${escapeHtml(u.email)}</td>
-      <td class="truncate" title="${escapeHtml(u.full_name)}">${escapeHtml(u.full_name)}</td>
-      <td><span class="role-tag ${u.role}">${u.role === 'admin' ? 'Administrador' : 'Cajero'}</span></td>
-      <td><span class="status ${u.active ? 'active' : 'inactive'}">${u.active ? 'Activo' : 'Inactivo'}</span></td>
-      <td>${twoFaBadge}</td>
-      <td>
+      <td data-label="ID">${u.id}</td>
+      <td class="truncate" data-label="Usuario" title="${escapeHtml(u.username)}">${escapeHtml(u.username)}</td>
+      <td class="truncate" data-label="Correo" title="${escapeHtml(u.email)}">${escapeHtml(u.email)}</td>
+      <td class="truncate" data-label="Nombre" title="${escapeHtml(u.full_name)}">${escapeHtml(u.full_name)}</td>
+      <td data-label="Rol"><span class="role-tag ${u.role}">${u.role === 'admin' ? 'Administrador' : 'Cajero'}</span></td>
+      <td data-label="Estado"><span class="status ${u.active ? 'active' : 'inactive'}">${u.active ? 'Activo' : 'Inactivo'}</span></td>
+      <td data-label="2FA">${twoFaBadge}</td>
+      <td data-label="Acciones">
         <div class="table-actions">
           <button class="link-btn edit" onclick='openEditModal(${JSON.stringify(u)})'>Editar</button>
           ${qrBtn}

@@ -52,24 +52,24 @@ function showSuccess(id, msg) {
   el.style.display = 'block';
 }
 
-// Paso 1 — Verificar usuario y mostrar QR
+// Paso 1 — Verificar que el usuario exista antes de avanzar
 async function submitForgotUsername() {
   const username = document.getElementById('forgot-username').value.trim();
   if (!username) return showError('forgot-error-1', 'Ingresá tu nombre de usuario.');
 
   try {
-    const token = localStorage.getItem('token');
-    const res = await fetch('/api/auth/setup-totp', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Setup TOTP requiere token — solo si ya está autenticado
-        // Para recuperación sin sesión usamos el endpoint público
-      }
-    });
+    const { ok, data } = await api.post('/auth/check-user', { username });
 
-    // Para recuperación de contraseña no necesitamos setup-totp
-    // Solo verificamos que el usuario existe pasando al paso 2
+    if (!ok) {
+      showError('forgot-error-1', data.message || 'No se pudo verificar el usuario.');
+      return;
+    }
+
+    if (!data.exists) {
+      showError('forgot-error-1', 'No existe ningún usuario activo con ese nombre. Verificá que esté bien escrito.');
+      return;
+    }
+
     verifiedUsername = username;
     currentStep = 2;
     showStep(2);

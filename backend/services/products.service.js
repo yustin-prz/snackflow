@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { getModels } = require('../src/models');
 
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // 3MB decodificados
@@ -11,6 +12,15 @@ function parseDataUrl(dataUrl) {
   return { mimeType, buffer };
 }
 
+// El endpoint de imagen se cachea en el navegador (Cache-Control), pero su URL
+// no cambia cuando se reemplaza la foto de un producto. Este hash del contenido
+// se manda como query param (?v=...) para forzar al navegador a pedir la nueva
+// versión en vez de seguir mostrando la que tenía cacheada.
+function imageVersion(image) {
+  if (!image) return null;
+  return crypto.createHash('md5').update(image).digest('hex').slice(0, 10);
+}
+
 class ProductsService {
 
   async list() {
@@ -18,7 +28,7 @@ class ProductsService {
     const products = await Product.findAll({ order: [['id', 'ASC']] });
     return products.map(p => ({
       id: p.id, name: p.name, price: p.price, active: p.active,
-      hasImage: !!p.image
+      hasImage: !!p.image, imageVersion: imageVersion(p.image)
     }));
   }
 
@@ -28,7 +38,8 @@ class ProductsService {
     if (!product) throw new Error('Producto no encontrado.');
     return {
       id: product.id, name: product.name, price: product.price,
-      active: product.active, image: product.image || null
+      active: product.active, image: product.image || null,
+      imageVersion: imageVersion(product.image)
     };
   }
 
@@ -59,7 +70,7 @@ class ProductsService {
       active: active === undefined ? true : !!active
     });
 
-    return { id: product.id, name: product.name, price: product.price, active: product.active, hasImage: !!product.image };
+    return { id: product.id, name: product.name, price: product.price, active: product.active, hasImage: !!product.image, imageVersion: imageVersion(product.image) };
   }
 
   async update(id, { name, price, image, active }) {
@@ -87,7 +98,7 @@ class ProductsService {
 
     await product.update(updates);
 
-    return { id: product.id, name: product.name, price: product.price, active: product.active, hasImage: !!product.image };
+    return { id: product.id, name: product.name, price: product.price, active: product.active, hasImage: !!product.image, imageVersion: imageVersion(product.image) };
   }
 
   async remove(id) {

@@ -128,3 +128,10 @@ input:focus { border-color: var(--brand-gold); }
 [data-theme="dark"] .theme-toggle-corner .icon-sun  { display: none; }
 [data-theme="dark"] .theme-toggle-corner .icon-moon { display: block; }
 [data-theme="dark"] .theme-toggle-corner { background: rgba(31,28,20,0.9); }
+
+@media (max-width: 480px) {
+  body { padding: 16px; min-height: 100vh; }
+  .login-card { padding: 24px; }
+  .logo img { width: 60px; height: 60px; }
+  .logo h1 { font-size: 20px; }
+}

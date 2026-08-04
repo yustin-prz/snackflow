@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function formatPrice(price) {
-  return '₡' + Number(price).toLocaleString('es-CR', { minimumFractionDigits: 0 });
+  return '₡' + Number(price).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function escapeHtml(str) {
@@ -48,7 +48,7 @@ async function loadProducts() {
     <div class="product-card ${p.active ? '' : 'inactive'}">
       <div class="product-thumb">
         ${p.hasImage
-          ? `<img src="/api/products/${p.id}/image" alt="${escapeHtml(p.name)}">`
+          ? `<img src="/api/products/${p.id}/image?v=${p.imageVersion}" alt="${escapeHtml(p.name)}">`
           : `<span class="placeholder-icon">🍽️</span>`}
       </div>
       <div class="product-body">

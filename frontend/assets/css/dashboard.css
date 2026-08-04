@@ -113,3 +113,11 @@ td {
 }
 
 tr:last-child td { border-bottom: none; }
+
+@media (max-width: 600px) {
+  .stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px 16px; }
+  .stat-value { font-size: 19px; }
+  .actions { grid-template-columns: 1fr; }
+  table { min-width: 480px; }
+}

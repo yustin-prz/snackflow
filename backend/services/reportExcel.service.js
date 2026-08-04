@@ -16,37 +16,47 @@ function styleTitleRow(sheet, rowIndex, text, span) {
   sheet.getRow(rowIndex).height = 26;
 }
 
-function addSummarySheet(workbook, { from, to, count, total, avg, byPaymentMethod }) {
+function addSummarySheet(workbook, { from, to, count, total, avg, byPaymentMethod, topProduct, topUser }) {
   const sheet = workbook.addWorksheet('Resumen');
   sheet.columns = [{ width: 28 }, { width: 22 }];
 
   styleTitleRow(sheet, 1, 'Reporte de ventas — La Matamonchis', 2);
   sheet.getCell('A2').value = 'Período';
+  sheet.getCell('A2').font = { color: { argb: 'FF8A8577' } };
   sheet.getCell('B2').value = `${from} a ${to}`;
+  sheet.getCell('B2').font = { bold: true, color: { argb: TEXT_DARK } };
 
+  // KPIs principales — lo primero que ve alguien con poco tiempo al abrir el archivo.
   const kpis = [
-    ['Transacciones', count],
-    ['Total recaudado', total],
-    ['Ticket promedio', avg],
-    ['Efectivo', byPaymentMethod.cash],
-    ['Tarjeta', byPaymentMethod.card]
+    ['Transacciones', count, false],
+    ['Total recaudado', total, true],
+    ['Ticket promedio', avg, true],
+    ['Efectivo', byPaymentMethod.cash, true],
+    ['Tarjeta', byPaymentMethod.card, true]
   ];
 
-  kpis.forEach(([label, value], i) => {
+  kpis.forEach(([label, value, money], i) => {
     const row = 4 + i;
     sheet.getCell(row, 1).value = label;
     sheet.getCell(row, 1).font = { bold: true, color: { argb: TEXT_DARK } };
     sheet.getCell(row, 2).value = value;
-    if (label !== 'Transacciones') sheet.getCell(row, 2).numFmt = MONEY_FORMAT;
+    sheet.getCell(row, 2).font = { size: 13, color: { argb: TEXT_DARK } };
+    if (money) sheet.getCell(row, 2).numFmt = MONEY_FORMAT;
   });
 
-  sheet.getCell(9, 1).value = 'Nota: la hoja "Transacciones" está formateada como Tabla de Excel';
-  sheet.getCell(10, 1).value = '(franjas + filtros). Para armar una tabla dinámica: seleccioná esa';
-  sheet.getCell(11, 1).value = 'tabla → Insertar → Tabla dinámica.';
-  [9, 10, 11].forEach(r => {
-    sheet.mergeCells(r, 1, r, 2);
-    sheet.getCell(r, 1).font = { italic: true, size: 10, color: { argb: 'FF8A8577' } };
-  });
+  // Destacados — evita tener que ir a buscarlos a las otras hojas.
+  const highlightsRow = 10;
+  sheet.getCell(highlightsRow, 1).value = 'Destacados del período';
+  sheet.getCell(highlightsRow, 1).font = { bold: true, size: 12, color: { argb: TEXT_DARK } };
+  sheet.mergeCells(highlightsRow, 1, highlightsRow, 2);
+
+  sheet.getCell(highlightsRow + 1, 1).value = 'Producto más vendido';
+  sheet.getCell(highlightsRow + 1, 1).font = { bold: true, color: { argb: TEXT_DARK } };
+  sheet.getCell(highlightsRow + 1, 2).value = topProduct ? `${topProduct.product_name} (${topProduct.quantity} und.)` : 'Sin datos';
+
+  sheet.getCell(highlightsRow + 2, 1).value = 'Cajero con más ingresos';
+  sheet.getCell(highlightsRow + 2, 1).font = { bold: true, color: { argb: TEXT_DARK } };
+  sheet.getCell(highlightsRow + 2, 2).value = topUser ? `${topUser.full_name} (${topUser.count} ventas)` : 'Sin datos';
 }
 
 function addTableSheet(workbook, { name, columns, rows, tableStyle }) {
@@ -79,6 +89,7 @@ async function buildReportWorkbook({ from, to, transactions, byProduct, byUser }
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'SnackFlow POS';
   workbook.created = new Date();
+  workbook.views = [{ activeTab: 0 }]; // abre siempre en "Resumen", no en la última hoja usada
 
   const count = transactions.length;
   const total = transactions.reduce((s, t) => s + t.total, 0);
@@ -88,7 +99,13 @@ async function buildReportWorkbook({ from, to, transactions, byProduct, byUser }
     card: transactions.filter(t => t.payment_method === 'card').reduce((s, t) => s + t.total, 0)
   };
 
-  addSummarySheet(workbook, { from, to, count, total, avg, byPaymentMethod });
+  // "Más vendido" es por cantidad, no por ingresos (byProduct viene ordenado por ingresos).
+  const topProduct = byProduct.length
+    ? byProduct.reduce((max, p) => p.quantity > max.quantity ? p : max, byProduct[0])
+    : null;
+  const topUser = byUser.length ? byUser[0] : null; // byUser ya viene ordenado por ingresos
+
+  addSummarySheet(workbook, { from, to, count, total, avg, byPaymentMethod, topProduct, topUser });
 
   addTableSheet(workbook, {
     name: 'Transacciones',

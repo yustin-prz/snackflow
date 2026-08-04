@@ -1,5 +1,5 @@
 function money(n) {
-  return '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 0 });
+  return '₡' + Number(n).toLocaleString('es-CR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function escapeHtml(str) {
@@ -70,12 +70,12 @@ async function loadSalesStats() {
 
   tbody.innerHTML = recent.map(s => `
     <tr>
-      <td>#${s.id}</td>
-      <td>${s.customer_name ? escapeHtml(s.customer_name) : 'Cliente general'}</td>
-      <td>${money(s.total)}</td>
-      <td>${s.payment_method ? PAYMENT_LABELS[s.payment_method] : '—'}</td>
-      <td><span class="status ${s.status}">${STATUS_LABELS[s.status] || s.status}</span></td>
-      <td>${new Date(s.created_at).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}</td>
+      <td data-label="#">#${s.id}</td>
+      <td data-label="Cliente">${s.customer_name ? escapeHtml(s.customer_name) : 'Cliente general'}</td>
+      <td data-label="Total">${money(s.total)}</td>
+      <td data-label="Pago">${s.payment_method ? PAYMENT_LABELS[s.payment_method] : '—'}</td>
+      <td data-label="Estado"><span class="status ${s.status}">${STATUS_LABELS[s.status] || s.status}</span></td>
+      <td data-label="Hora">${new Date(s.created_at).toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })}</td>
     </tr>
   `).join('');
 }

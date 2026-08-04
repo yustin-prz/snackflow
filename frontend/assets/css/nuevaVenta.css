@@ -2,15 +2,6 @@
   max-width: 960px;
 }
 
-.back-link {
-  display: inline-block;
-  font-size: 13px;
-  color: var(--text-muted);
-  text-decoration: none;
-  margin-bottom: 20px;
-}
-.back-link:hover { color: var(--text-dark); }
-
 /* ===================== Stepper ===================== */
 .stepper {
   display: flex;

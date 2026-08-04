@@ -83,6 +83,14 @@ class AuthService {
     return { message: 'Contraseña actualizada correctamente. Iniciá sesión con tu nueva contraseña.' };
   }
 
+  // Usado por el flujo de "olvidé mi contraseña" para avisar si el usuario
+  // ingresado no existe, antes de dejarlo avanzar al paso del código TOTP.
+  async userExists(username) {
+    const { User } = getModels();
+    const user = await User.findOne({ where: { username, active: true } });
+    return { exists: !!(user && user.totp_secret) };
+  }
+
   async setupTotp(username) {
     const { User } = getModels();
     const user = await User.findOne({ where: { username, active: true } });
