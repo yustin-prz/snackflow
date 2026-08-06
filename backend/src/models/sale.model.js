@@ -31,6 +31,17 @@ const Sale = sequelize.define('Sale', {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0
   },
+  // Porcentaje del descuento MANUAL (HU-05), ej. 8.5 = 8.5%. Null cuando no
+  // hay descuento manual activo (incluye el caso de la promo 2x1, que no usa
+  // porcentaje: su monto se recalcula directo desde el precio del producto).
+  // Se guarda por separado de "discount" (que es el monto en colones) porque
+  // si se agregan/quitan productos después de aplicar el descuento, hay que
+  // poder volver a calcular el monto sin perder el porcentaje original.
+  discount_percentage: {
+    type: DataTypes.DECIMAL(5, 2),
+    allowNull: true,
+    defaultValue: null
+  },
   tax: {
     type: DataTypes.DECIMAL(10, 2),
     defaultValue: 0

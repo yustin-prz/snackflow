@@ -2,6 +2,13 @@ const { getModels } = require('../src/models');
 
 const TAX_RATE = 0.13;
 
+// Reglas de negocio de HU-05 (descuento manual) y HU-06 (promo 2x1 Gelatina).
+// "Total de la venta" = suma de los productos, que ya incluyen el IVA.
+const DISCOUNT_MAX_PERCENTAGE = 10;
+const DISCOUNT_MIN_SALE_TOTAL = 10000;
+const DISCOUNT_MIN_DISTINCT_PRODUCTS = 3;
+const PROMO_2X1_PRODUCT_NAME = 'gelatina'; // coincide con "Gelatinas" u otra variante que contenga esta palabra
+
 function round2(n) {
   return Math.round(n * 100) / 100;
 }
@@ -20,6 +27,7 @@ class SaleService {
       notes: sale.notes,
       subtotal: sale.subtotal,
       discount: sale.discount,
+      discount_percentage: sale.discount_percentage,
       tax: sale.tax,
       total: sale.total,
       payment_method: sale.payment_method,
@@ -49,6 +57,7 @@ class SaleService {
       notes: sale.notes,
       subtotal: sale.subtotal,
       discount: sale.discount,
+      discount_percentage: sale.discount_percentage,
       tax: sale.tax,
       total: sale.total,
       payment_method: sale.payment_method,
@@ -84,6 +93,7 @@ class SaleService {
       notes: notes || null,
       subtotal: 0,
       discount: 0,
+      discount_percentage: null,
       tax: 0,
       total: 0,
       payment_method: null,
@@ -94,28 +104,162 @@ class SaleService {
     return { id: sale.id, status: sale.status };
   }
 
-  // Recalcula subtotal/impuesto/total a partir de los sale_items actuales.
-  // El precio de cada producto ya incluye el 13% de IVA (lo que se ingresa al
-  // crear el producto es el precio final al público), así que el IVA no se
-  // suma aparte: se extrae del monto de los items para mostrarlo desglosado,
-  // y el total cobrado es ese mismo monto (menos el descuento, si aplica).
+  // Calcula el descuento de la promo 2x1 de Gelatina a partir de los sale_items
+  // actuales (con su Product ya incluido). Por cada par de unidades de
+  // "Gelatina" se descuenta el precio de una unidad (ese precio ya incluye IVA,
+  // igual que el resto de los montos de la venta).
+  // Ej.: 4 gelatinas = 2 pares = se descuentan 2. 3 gelatinas = 1 par = se
+  // descuenta 1 (la tercera se cobra completa).
+  _calcularPromo2x1(items) {
+    const gelatinaItem = items.find(
+      i => i.Product && i.Product.name.trim().toLowerCase().includes(PROMO_2X1_PRODUCT_NAME)
+    );
+
+    if (!gelatinaItem || gelatinaItem.quantity < 2) {
+      return { activa: false, monto: 0 };
+    }
+
+    const pares = Math.floor(gelatinaItem.quantity / 2);
+    return { activa: true, monto: round2(pares * Number(gelatinaItem.unit_price)) };
+  }
+
+  // Recalcula subtotal/impuesto/total a partir de los sale_items actuales, y
+  // mantiene coherente la promoción/descuento de la venta:
+  //  - Si hay un descuento MANUAL activo, se vuelve a calcular su monto sobre
+  //    el nuevo total de productos, o se quita solo si la venta dejó de
+  //    cumplir los requisitos (menos de 3 productos distintos o total < ₡10,000).
+  //  - Si no hay descuento manual, se evalúa la promo 2x1 de Gelatina y se
+  //    aplica o se quita automáticamente según corresponda.
+  // Ambas son mutuamente excluyentes: nunca se recalculan las dos a la vez.
+  //
+  // El precio de cada producto ya incluye el 13% de IVA, así que: primero se
+  // calcula el total real a cobrar (suma de productos menos el descuento, todo
+  // con IVA incluido), y recién de ese total final se desglosa el subtotal sin
+  // IVA y el IVA para mostrarlos por separado.
   async recalculateSale(saleId) {
-    const { Sale, SaleItem } = getModels();
+    const { Sale, SaleItem, Product } = getModels();
 
     const sale = await Sale.findByPk(saleId);
     if (!sale) throw new Error('Venta no encontrada.');
 
-    const items = await SaleItem.findAll({ where: { sale_id: saleId } });
+    const items = await SaleItem.findAll({
+      where: { sale_id: saleId },
+      include: [{ model: Product }]
+    });
 
     const itemsTotal = items.reduce((sum, item) => sum + Number(item.subtotal), 0);
-    const discount = 0; // todavía no hay descuentos/promociones (HU-05/HU-06)
+    const distinctProducts = new Set(items.map(i => i.product_id)).size;
+
+    let discount = 0;
+    let promotion = sale.promotion;
+    let discountPercentage = sale.discount_percentage;
+
+    if (promotion === 'manual') {
+      const eligible = distinctProducts >= DISCOUNT_MIN_DISTINCT_PRODUCTS && itemsTotal >= DISCOUNT_MIN_SALE_TOTAL;
+      if (eligible && discountPercentage) {
+        discount = round2(itemsTotal * (Number(discountPercentage) / 100));
+      } else {
+        promotion = null;
+        discountPercentage = null;
+        discount = 0;
+      }
+    } else {
+      const promo2x1 = this._calcularPromo2x1(items);
+      if (promo2x1.activa) {
+        promotion = '2x1';
+        discountPercentage = null;
+        discount = promo2x1.monto;
+      } else {
+        promotion = null;
+        discountPercentage = null;
+        discount = 0;
+      }
+    }
+
     const total = round2(itemsTotal - discount);
     const subtotal = round2(total / (1 + TAX_RATE));
     const tax = round2(total - subtotal);
 
-    await sale.update({ subtotal, discount, tax, total });
+    await sale.update({
+      subtotal,
+      discount,
+      discount_percentage: discountPercentage,
+      promotion,
+      tax,
+      total
+    });
 
-    return { subtotal, discount, tax, total };
+    return { subtotal, discount, discount_percentage: discountPercentage, promotion, tax, total };
+  }
+
+  // Aplica un descuento manual (HU-05). Requiere al menos
+  // DISCOUNT_MIN_DISTINCT_PRODUCTS productos diferentes y un total (con IVA
+  // incluido) de al menos DISCOUNT_MIN_SALE_TOTAL, un porcentaje entre 0 y
+  // DISCOUNT_MAX_PERCENTAGE, y que la venta no tenga ya otra promoción
+  // aplicada (ej. la 2x1 automática).
+  async applyDiscount(saleId, percentage) {
+    const { Sale, SaleItem } = getModels();
+
+    const sale = await Sale.findByPk(saleId);
+    if (!sale) throw new Error('Venta no encontrada.');
+    if (sale.status !== 'open') throw new Error('La venta ya fue cerrada.');
+
+    if (sale.promotion) {
+      throw new Error('Esta venta ya tiene una promoción aplicada; no se puede combinar con otro descuento.');
+    }
+
+    const pct = Number(percentage);
+    if (!pct || pct <= 0) throw new Error('El porcentaje de descuento debe ser mayor que cero.');
+    if (pct > DISCOUNT_MAX_PERCENTAGE) {
+      throw new Error(`El descuento no puede superar el ${DISCOUNT_MAX_PERCENTAGE}% del total de la venta.`);
+    }
+
+    const items = await SaleItem.findAll({ where: { sale_id: saleId } });
+    const distinctProducts = new Set(items.map(i => i.product_id)).size;
+    const itemsTotal = items.reduce((sum, item) => sum + Number(item.subtotal), 0);
+
+    if (distinctProducts < DISCOUNT_MIN_DISTINCT_PRODUCTS || itemsTotal < DISCOUNT_MIN_SALE_TOTAL) {
+      throw new Error(
+        `El descuento requiere al menos ${DISCOUNT_MIN_DISTINCT_PRODUCTS} productos diferentes y un total de al menos ₡${DISCOUNT_MIN_SALE_TOTAL.toLocaleString('es-CR')}.`
+      );
+    }
+
+    const discount = round2(itemsTotal * (pct / 100));
+    const total = round2(itemsTotal - discount);
+    const subtotal = round2(total / (1 + TAX_RATE));
+    const tax = round2(total - subtotal);
+
+    await sale.update({
+      discount,
+      discount_percentage: pct,
+      promotion: 'manual',
+      subtotal,
+      tax,
+      total
+    });
+
+    return {
+      id: sale.id,
+      subtotal,
+      discount,
+      discount_percentage: pct,
+      promotion: 'manual',
+      tax,
+      total
+    };
+  }
+
+  // Quita el descuento/promoción de la venta y vuelve a calcularla desde
+  // cero (lo que reactiva la 2x1 automática si el carrito califica para ella).
+  async removeDiscount(saleId) {
+    const { Sale } = getModels();
+
+    const sale = await Sale.findByPk(saleId);
+    if (!sale) throw new Error('Venta no encontrada.');
+    if (sale.status !== 'open') throw new Error('La venta ya fue cerrada.');
+
+    await sale.update({ promotion: null, discount_percentage: null });
+    return this.recalculateSale(saleId);
   }
 
   // Cierra la venta: fija el método de pago y pasa el estado a "completed".
@@ -139,6 +283,8 @@ class SaleService {
       payment_method: sale.payment_method,
       subtotal: sale.subtotal,
       discount: sale.discount,
+      discount_percentage: sale.discount_percentage,
+      promotion: sale.promotion,
       tax: sale.tax,
       total: sale.total
     };

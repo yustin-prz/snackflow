@@ -107,6 +107,7 @@
           <div class="cart-items" id="cart-items">
             <p class="empty-state">Todavía no has agregado productos.</p>
           </div>
+          <p class="promo-badge" id="cart-promo-badge" style="display:none">🎉 Promoción 2x1 en Gelatina aplicada</p>
           <div class="cart-total-row">
             <span>Subtotal</span>
             <span id="cart-subtotal">₡0</span>
@@ -136,6 +137,14 @@
         <div class="pos-card pos-card-narrow">
           <p class="section-title">Cobro</p>
 
+          <div class="summary-row" id="resumen-productos-row" style="display:none">
+            <span>Productos</span>
+            <span id="resumen-productos">₡0</span>
+          </div>
+          <div class="summary-row" id="resumen-descuento-row" style="display:none">
+            <span id="resumen-descuento-label">Descuento</span>
+            <span id="resumen-descuento" class="discount-amount">−₡0</span>
+          </div>
           <div class="summary-row">
             <span>Subtotal</span>
             <span id="resumen-subtotal">₡0</span>
@@ -147,6 +156,26 @@
           <div class="summary-row summary-total">
             <span>Total</span>
             <span id="resumen-total">₡0</span>
+          </div>
+
+          <div class="form-group summary-spacer" id="descuento-section">
+            <label for="descuento-input">Descuento manual</label>
+
+            <div class="discount-row" id="descuento-row-input">
+              <div class="discount-input-wrap">
+                <input type="number" id="descuento-input" min="0" max="10" step="0.5" placeholder="0">
+                <span class="discount-suffix">%</span>
+              </div>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-aplicar-descuento">Aplicar</button>
+            </div>
+
+            <div class="discount-applied" id="descuento-aplicado-row" style="display:none">
+              <span id="descuento-aplicado-texto"></span>
+              <button type="button" class="btn-link-remove" id="btn-quitar-descuento">Quitar</button>
+            </div>
+
+            <p class="field-hint" id="descuento-hint"></p>
+            <p class="field-error" id="descuento-error"></p>
           </div>
 
           <div class="form-group summary-spacer">

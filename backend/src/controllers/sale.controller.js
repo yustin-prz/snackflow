@@ -37,4 +37,24 @@ const complete = async (req, res) => {
   }
 };
 
-module.exports = { list, getById, create, complete };
+// HU-05: aplica un descuento manual (por porcentaje) a una venta abierta.
+const applyDiscount = async (req, res) => {
+  try {
+    const sale = await saleService.applyDiscount(req.params.id, req.body.percentage);
+    res.json(sale);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Quita el descuento/promoción de una venta abierta (reactiva la 2x1 automática si corresponde).
+const removeDiscount = async (req, res) => {
+  try {
+    const sale = await saleService.removeDiscount(req.params.id);
+    res.json(sale);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+module.exports = { list, getById, create, complete, applyDiscount, removeDiscount };
