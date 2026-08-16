@@ -20,11 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const NOMBRE_PRODUCTO_PROMO_2X1 = 'gelatina'; // coincide con "Gelatinas" u otra variante que contenga esta palabra
 
   // ===================== Estado del wizard =====================
+  // Ahora son solo 2 pasos: 1 = Pedido, 2 = Resumen.
   const state = {
     step: 1,
-    cliente: { nombre: '', telefono: '', notas: '' },
     carrito: {},   // { [productId]: cantidad }
     metodoPago: null,
+    facturaActiva: false,
     // tipo: null | 'manual' | '2x1'. Son mutuamente excluyentes: nunca puede
     // haber más de una promoción/descuento activo en la misma venta.
     descuento: { tipo: null, monto: 0, porcentaje: null },
@@ -124,19 +125,11 @@ document.addEventListener('DOMContentLoaded', () => {
       item.classList.toggle('is-done', itemStep < step);
     });
 
-    if (step === 3) renderResumen();
+    if (step === 2) renderResumen();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ===================== Paso 1: Cliente =====================
-  $('btn-to-step2').addEventListener('click', () => {
-    state.cliente.nombre    = $('cliente-nombre').value.trim();
-    state.cliente.telefono  = $('cliente-telefono').value.trim();
-    state.cliente.notas     = $('cliente-notas').value.trim();
-    goToStep(2);
-  });
-
-  // ===================== Paso 2: Pedido =====================
+  // ===================== Paso 1: Pedido =====================
   async function loadProducts() {
     const grid = $('product-grid');
     const pageError = $('products-error');
@@ -230,17 +223,15 @@ document.addEventListener('DOMContentLoaded', () => {
     $('cart-subtotal').textContent = money(subtotal());
   }
 
-  $('btn-to-step1').addEventListener('click', () => goToStep(1));
-
-  $('btn-to-step3').addEventListener('click', () => {
+  $('btn-continuar-pedido').addEventListener('click', () => {
     if (carritoItems().length === 0) {
       alert('Agregá al menos un producto para continuar.');
       return;
     }
-    goToStep(3);
+    goToStep(2);
   });
 
-  // ===================== Paso 3: Resumen =====================
+  // ===================== Paso 2: Resumen =====================
 
   $('btn-aplicar-descuento').addEventListener('click', () => {
     const errorEl = $('descuento-error');
@@ -288,18 +279,56 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.classList.add('is-selected');
       state.metodoPago = btn.dataset.value;
       $('pago-error').textContent = '';
+      actualizarVuelto();
     });
+  });
+
+  // ===================== Efectivo recibido / vuelto =====================
+  // Solo aplica cuando el método de pago es "Efectivo". Se recalcula cada vez
+  // que cambia el monto ingresado, el método de pago, o el total (ej. al
+  // aplicar/quitar un descuento).
+  function actualizarVuelto() {
+    const section = $('vuelto-section');
+    const resultado = $('vuelto-resultado');
+
+    if (state.metodoPago !== 'efectivo') {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+
+    const valor = $('efectivo-recibido').value;
+    if (valor === '') {
+      resultado.textContent = '';
+      resultado.classList.remove('insuficiente');
+      return;
+    }
+
+    const recibido = Number(valor);
+    const vuelto = round2(recibido - totales().total);
+
+    if (vuelto < 0) {
+      resultado.textContent = `Falta ${money(Math.abs(vuelto))}`;
+      resultado.classList.add('insuficiente');
+    } else {
+      resultado.textContent = `Vuelto: ${money(vuelto)}`;
+      resultado.classList.remove('insuficiente');
+    }
+  }
+
+  $('efectivo-recibido').addEventListener('input', actualizarVuelto);
+
+  // ===================== Factura electrónica =====================
+  // Solo controla mostrar/ocultar los campos; Nombre y Correo se leen
+  // directamente del DOM al confirmar la venta.
+  $('factura-toggle').addEventListener('change', (e) => {
+    state.facturaActiva = e.target.checked;
+    $('factura-fields').style.display = state.facturaActiva ? 'flex' : 'none';
   });
 
   function renderResumen() {
     sincronizarDescuento();
-
-    const dl = $('resumen-cliente');
-    dl.innerHTML = `
-      <dt>Nombre</dt><dd>${state.cliente.nombre || '—'}</dd>
-      <dt>Teléfono</dt><dd>${state.cliente.telefono || '—'}</dd>
-      ${state.cliente.notas ? `<dt>Notas</dt><dd>${state.cliente.notas}</dd>` : ''}
-    `;
 
     const itemsContainer = $('resumen-items');
     itemsContainer.innerHTML = '';
@@ -340,6 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('resumen-total').textContent    = money(t.total);
 
     renderDescuentoUI();
+    actualizarVuelto(); // el total pudo cambiar (ej. se aplicó/quitó un descuento)
   }
 
   // Controla los distintos estados del bloque "Descuento manual": disponible,
@@ -384,19 +414,24 @@ document.addEventListener('DOMContentLoaded', () => {
     hint.textContent = `Podés aplicar hasta un ${DESCUENTO_MAX_PORCENTAJE}% de descuento.`;
   }
 
-  $('btn-to-step2-back').addEventListener('click', () => goToStep(2));
+  $('btn-volver-pedido').addEventListener('click', () => goToStep(1));
 
   // Vuelve el wizard a su estado inicial para poder registrar otra venta.
   function resetWizard() {
-    state.cliente = { nombre: '', telefono: '', notas: '' };
     state.carrito = {};
     state.metodoPago = null;
+    state.facturaActiva = false;
     state.descuento = { tipo: null, monto: 0, porcentaje: null };
 
-    $('cliente-nombre').value = '';
-    $('cliente-telefono').value = '';
-    $('cliente-notas').value = '';
     $('descuento-input').value = '';
+    $('efectivo-recibido').value = '';
+    $('vuelto-resultado').textContent = '';
+    $('vuelto-resultado').classList.remove('insuficiente');
+    $('vuelto-section').style.display = 'none';
+    $('factura-toggle').checked = false;
+    $('factura-nombre').value = '';
+    $('factura-correo').value = '';
+    $('factura-fields').style.display = 'none';
     document.querySelectorAll('#pago-options .option-btn').forEach(b => b.classList.remove('is-selected'));
     $('pago-error').textContent = '';
     $('descuento-error').textContent = '';
@@ -411,17 +446,34 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Si es efectivo, el monto recibido debe alcanzar para cubrir el total.
+    if (state.metodoPago === 'efectivo') {
+      const valor = $('efectivo-recibido').value;
+      const recibido = Number(valor);
+      if (valor === '' || isNaN(recibido) || recibido < totales().total) {
+        $('pago-error').textContent = 'El efectivo recibido debe ser al menos el total de la venta.';
+        return;
+      }
+    }
+
     const btn = $('btn-confirmar');
     $('pago-error').textContent = '';
     btn.disabled = true;
     btn.textContent = 'Guardando...';
 
     try {
+      // El nombre para la factura electrónica solo se manda si el toggle está
+      // activo. El correo se captura en el formulario pero todavía NO se
+      // envía al backend: la tabla "sales" no tiene una columna para eso
+      // todavía. Tampoco se manda teléfono/notas: esos campos ya no existen
+      // en este formulario.
+      const nombreFactura = state.facturaActiva ? ($('factura-nombre').value.trim() || null) : null;
+
       // 1. Crear el encabezado de la venta (el usuario se toma del token en el backend)
       const { ok: okSale, data: saleData } = await api.post('/sales', {
-        customer_name: state.cliente.nombre || null,
-        customer_phone: state.cliente.telefono || null,
-        notes: state.cliente.notas || null
+        customer_name: nombreFactura,
+        customer_phone: null,
+        notes: null
       });
       if (!okSale) throw new Error(saleData.message || 'No se pudo crear la venta.');
 

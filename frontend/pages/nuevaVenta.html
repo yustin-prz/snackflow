@@ -49,49 +49,17 @@
     <ol class="stepper" id="stepper">
       <li class="stepper-item" data-step="1">
         <span class="stepper-dot">1</span>
-        <span class="stepper-label">Cliente</span>
+        <span class="stepper-label">Pedido</span>
       </li>
       <li class="stepper-line"></li>
       <li class="stepper-item" data-step="2">
         <span class="stepper-dot">2</span>
-        <span class="stepper-label">Pedido</span>
-      </li>
-      <li class="stepper-line"></li>
-      <li class="stepper-item" data-step="3">
-        <span class="stepper-dot">3</span>
         <span class="stepper-label">Resumen</span>
       </li>
     </ol>
 
-    <!-- ===================== PASO 1: CLIENTE ===================== -->
+    <!-- ===================== PASO 1: PEDIDO ===================== -->
     <section class="pos-step" data-step="1">
-      <div class="pos-card pos-card-narrow">
-        <p class="section-title">Datos del cliente</p>
-
-        <div class="form-group">
-          <label for="cliente-nombre">Nombre <span class="opt">(opcional)</span></label>
-          <input type="text" id="cliente-nombre" placeholder="Ej. Juan Pérez" autocomplete="off">
-        </div>
-
-        <div class="form-group">
-          <label for="cliente-telefono">Teléfono <span class="opt">(opcional)</span></label>
-          <input type="tel" id="cliente-telefono" placeholder="Ej. 8888-8888" autocomplete="off">
-        </div>
-
-        <div class="form-group">
-          <label for="cliente-notas">Notas <span class="opt">(opcional)</span></label>
-          <textarea id="cliente-notas" rows="2" placeholder="Ej. sin cebolla, alergia a maní..."></textarea>
-        </div>
-      </div>
-
-      <div class="pos-actions">
-        <span></span>
-        <button class="btn btn-primary" id="btn-to-step2">Continuar &rarr;</button>
-      </div>
-    </section>
-
-    <!-- ===================== PASO 2: PEDIDO ===================== -->
-    <section class="pos-step" data-step="2">
       <div class="pos-step2-grid">
 
         <div>
@@ -117,20 +85,17 @@
       </div>
 
       <div class="pos-actions">
-        <button class="btn btn-outline" id="btn-to-step1">&larr; Atrás</button>
-        <button class="btn btn-primary" id="btn-to-step3">Continuar &rarr;</button>
+        <span></span>
+        <button class="btn btn-primary" id="btn-continuar-pedido">Continuar &rarr;</button>
       </div>
     </section>
 
-    <!-- ===================== PASO 3: RESUMEN ===================== -->
-    <section class="pos-step" data-step="3">
+    <!-- ===================== PASO 2: RESUMEN ===================== -->
+    <section class="pos-step" data-step="2">
       <div class="pos-step3-grid">
 
         <div class="pos-card">
-          <p class="section-title">Cliente</p>
-          <dl class="summary-list" id="resumen-cliente"></dl>
-
-          <p class="section-title summary-spacer">Productos</p>
+          <p class="section-title">Productos</p>
           <div class="cart-items" id="resumen-items"></div>
         </div>
 
@@ -186,6 +151,36 @@
             </div>
           </div>
 
+          <div class="form-group summary-spacer" id="vuelto-section" style="display:none">
+            <label for="efectivo-recibido">Efectivo recibido</label>
+            <div class="currency-input-wrap">
+              <span class="currency-prefix">₡</span>
+              <input type="number" id="efectivo-recibido" min="0" step="1" placeholder="0" inputmode="decimal">
+            </div>
+            <p class="vuelto-result" id="vuelto-resultado"></p>
+          </div>
+
+          <div class="form-group summary-spacer">
+            <div class="toggle-row">
+              <label class="toggle-switch">
+                <input type="checkbox" id="factura-toggle">
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="toggle-label">Factura electrónica</span>
+            </div>
+
+            <div class="factura-fields" id="factura-fields" style="display:none">
+              <div class="form-group">
+                <label for="factura-nombre">Nombre</label>
+                <input type="text" id="factura-nombre" placeholder="Ej. Juan Pérez" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="factura-correo">Correo electrónico</label>
+                <input type="email" id="factura-correo" placeholder="Ej. correo@ejemplo.com" autocomplete="off">
+              </div>
+            </div>
+          </div>
+
           <p class="field-error" id="pago-error"></p>
 
           <button class="btn btn-primary btn-block" id="btn-confirmar">Confirmar venta</button>
@@ -194,7 +189,7 @@
       </div>
 
       <div class="pos-actions">
-        <button class="btn btn-outline" id="btn-to-step2-back">&larr; Atrás</button>
+        <button class="btn btn-outline" id="btn-volver-pedido">&larr; Atrás</button>
         <span></span>
       </div>
     </section>

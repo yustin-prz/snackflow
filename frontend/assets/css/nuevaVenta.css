@@ -355,6 +355,120 @@
   flex-shrink: 0;
 }
 
+/* ===================== Toggle "Factura electrónica" ===================== */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: var(--border-card);
+  border-radius: 999px;
+  transition: background 0.15s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.15s;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: var(--brand-gold);
+}
+
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(18px);
+}
+
+.toggle-switch input:focus-visible + .toggle-slider {
+  outline: 2px solid var(--brand-gold);
+  outline-offset: 2px;
+}
+
+.toggle-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.factura-fields {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.factura-fields .form-group {
+  margin-bottom: 0;
+}
+
+/* ===================== Efectivo recibido / vuelto ===================== */
+.currency-input-wrap {
+  position: relative;
+}
+
+.currency-input-wrap .currency-prefix {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+.currency-input-wrap input {
+  width: 100%;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-body);
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-card);
+  border-radius: 8px;
+  padding: 10px 12px 10px 26px;
+  box-sizing: border-box;
+}
+
+.currency-input-wrap input:focus {
+  outline: none;
+  border-color: var(--brand-gold);
+}
+
+.vuelto-result {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1D9E75;
+  margin: 8px 0 0;
+  min-height: 18px;
+}
+
+.vuelto-result.insuficiente { color: #EF4444; }
+
 .empty-state {
   font-size: 13px;
   color: var(--text-faint);
