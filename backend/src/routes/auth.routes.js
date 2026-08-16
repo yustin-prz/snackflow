@@ -13,6 +13,12 @@ const { verifyToken } = require('../middlewares/auth.middleware');
 // alguien no evada el límite simplemente probando muchos usuarios distintos.
 const porIpYUsuario = (req) => `${req.ip}:${(req.body && req.body.username) || 'sin-usuario'}`;
 
+// Un 503 (Neon caído, ver auth.controller.js) NO es un intento fallido de
+// login — es un problema de conexión ajeno a la contraseña. Sin esto, cada
+// request que chocaba con Neon offline gastaba una de las 5 oportunidades
+// igual que una contraseña incorrecta, y unos pocos reintentos durante un
+// corte de internet bastaban para autobloquearse 15 minutos justo cuando
+// más se necesitaba poder entrar por Postgres local.
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
@@ -20,6 +26,7 @@ const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true,
+  requestWasSuccessful: (req, res) => res.statusCode < 400 || res.statusCode === 503,
   keyGenerator: porIpYUsuario
 });
 
