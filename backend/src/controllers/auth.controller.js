@@ -1,4 +1,5 @@
 const authService = require('../../services/auth.service');
+const { isConnectionError, triggerFailoverNow } = require('../config/database');
 
 const login = async (req, res) => {
   try {
@@ -20,6 +21,18 @@ const login = async (req, res) => {
         deadline: error.deadline || null,
         qrCode: error.qrCode || null,
         secret: error.secret || null
+      });
+    }
+    // Un error de red hacia Neon (ej. se cayó el internet) NO es una
+    // contraseña incorrecta — mostrar el error crudo (ENOTFOUND, etc.) como
+    // si fuera 401 confundía al cajero y encima nunca disparaba el cambio a
+    // Postgres local (eso solo pasaba en el próximo tick de startHealthCheck,
+    // hasta 20s después). Acá se dispara el cambio YA y se le pide al
+    // usuario que reintente en vez de mentirle sobre sus credenciales.
+    if (isConnectionError(error)) {
+      triggerFailoverNow();
+      return res.status(503).json({
+        message: 'Problema de conexión con la base de datos. Probá de nuevo en unos segundos — la app va a seguir funcionando sin internet.'
       });
     }
     res.status(401).json({ message: error.message });

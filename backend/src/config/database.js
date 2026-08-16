@@ -52,6 +52,47 @@ const getSequelize = () => {
 
 const getActiveSource = () => activeSource;
 
+// Reconoce errores de RED/DNS al hablar con la BD (Neon inalcanzable) para
+// distinguirlos de errores de negocio (credenciales, validaciones, etc.) —
+// estos últimos SÍ deben mostrarse tal cual al usuario, los de red no.
+function isConnectionError(error) {
+  const code = error && error.original && error.original.code;
+  if (code && ['ENOTFOUND', 'ECONNREFUSED', 'ETIMEDOUT', 'EHOSTUNREACH'].includes(code)) return true;
+  const name = error && error.name;
+  return name === 'SequelizeConnectionError'
+    || name === 'SequelizeConnectionRefusedError'
+    || name === 'SequelizeHostNotFoundError'
+    || name === 'SequelizeHostNotReachableError'
+    || name === 'SequelizeConnectionTimedOutError';
+}
+
+let onSwitchCallback = null;
+let switching = false; // evita disparar dos failover a la vez si llegan varios requests fallidos juntos
+
+// Fuerza un intento de cambio de lado YA, sin esperar al próximo tick de
+// startHealthCheck() (hasta 20s de por medio). Se llama cuando un request
+// real choca con un error de conexión — así "no hay internet, dejame entrar
+// por local" no depende de haber tenido la suerte de que ya corriera el
+// intervalo. No hace nada si ya estamos en local y local también falla (ya
+// no hay a dónde más cambiar) ni si ya hay un failover en curso.
+async function triggerFailoverNow() {
+  if (switching || activeSource !== 'neon') return;
+  switching = true;
+  try {
+    const localConn = await probeConnection(process.env.DATABASE_URL, false);
+    const oldConn = sequelize;
+    sequelize = localConn;
+    activeSource = 'local';
+    await oldConn.close().catch(() => {});
+    console.log('✅ Reconectado a PostgreSQL local (disparado por un request fallido).');
+    if (onSwitchCallback) await onSwitchCallback();
+  } catch (localError) {
+    console.error('❌ No se pudo cambiar a PostgreSQL local:', localError.message);
+  } finally {
+    switching = false;
+  }
+}
+
 // connectDB() solo corría UNA VEZ, al arrancar el contenedor: si Neon se
 // caía DESPUÉS de eso (ej. se desconecta el internet a mitad de una sesión),
 // el backend se quedaba intentando usar esa misma conexión rota para
@@ -73,9 +114,12 @@ const getActiveSource = () => activeSource;
 // resuelve conflictos de ID si Neon recibió otros datos mientras tanto —
 // para eso hace falta diseñarlo aparte, no es un fix de una línea).
 function startHealthCheck(onSwitch, intervalMs = 20000) {
+  onSwitchCallback = onSwitch; // así triggerFailoverNow() también puede usarlo, no solo el setInterval de abajo
   if (!process.env.DATABASE_BACKUP_URL) return; // sin Neon configurado no hay nada que vigilar
 
   setInterval(async () => {
+    if (switching) return; // ya hay un cambio de lado en curso (ej. disparado por triggerFailoverNow) — no pisarlo
+
     try {
       if (activeSource === 'neon') {
         await sequelize.authenticate(); // sigue viva, no hay nada que hacer
@@ -84,17 +128,19 @@ function startHealthCheck(onSwitch, intervalMs = 20000) {
 
       // Estamos en local: probar si Neon ya volvió, sin soltar la conexión
       // local activa a menos que la prueba tenga éxito.
+      switching = true;
       const neonConn = await probeConnection(process.env.DATABASE_BACKUP_URL, true);
       const oldConn = sequelize;
       sequelize = neonConn;
       activeSource = 'neon';
       await oldConn.close().catch(() => {});
       console.log('✅ Internet recuperado — reconectado a Neon PostgreSQL.');
-      if (onSwitch) onSwitch();
+      if (onSwitch) await onSwitch();
     } catch (error) {
       if (activeSource !== 'neon') return; // ya estamos en local y también falló: no hay más a qué recurrir
 
       console.warn('⚠️  Se perdió la conexión a Neon, cambiando a PostgreSQL local...');
+      switching = true;
       try {
         const localConn = await probeConnection(process.env.DATABASE_URL, false);
         const oldConn = sequelize;
@@ -102,12 +148,14 @@ function startHealthCheck(onSwitch, intervalMs = 20000) {
         activeSource = 'local';
         await oldConn.close().catch(() => {});
         console.log('✅ Reconectado a PostgreSQL local.');
-        if (onSwitch) onSwitch();
+        if (onSwitch) await onSwitch();
       } catch (localError) {
         console.error('❌ Neon se cayó y tampoco se pudo conectar a PostgreSQL local:', localError.message);
       }
+    } finally {
+      switching = false;
     }
   }, intervalMs);
 }
 
-module.exports = { connectDB, getSequelize, getActiveSource, startHealthCheck };
+module.exports = { connectDB, getSequelize, getActiveSource, startHealthCheck, triggerFailoverNow, isConnectionError };

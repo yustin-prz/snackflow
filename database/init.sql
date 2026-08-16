@@ -64,6 +64,10 @@ INSERT INTO products (name, price) VALUES
 ON CONFLICT DO NOTHING;
 
 -- Usuario administrador por defecto (contraseña: Admin1234)
+-- Hash real de bcrypt (10 rounds) para "Admin1234" — antes había un placeholder
+-- de texto plano que NO era un hash válido, así que ningún password lo
+-- pasaba nunca contra bcrypt.compare() y el admin sembrado por este script
+-- quedaba imposible de usar para loguearse (bug real, no cosa de sync).
 INSERT INTO users (username, email, password, full_name, role) VALUES
-    ('admin', 'admin@lamatamonchis.local', '$2a$10$placeholder_hash_cambiar_en_produccion', 'Administrador', 'admin')
+    ('admin', 'admin@lamatamonchis.local', '$2a$10$HsYWNHz6o3B3YHmgCgoO3u7sq68bymRjjUqKS3FDTKjXbHOP0i2gO', 'Administrador', 'admin')
 ON CONFLICT DO NOTHING;
