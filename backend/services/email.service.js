@@ -4,7 +4,11 @@ const { buildInvoicePdfBuffer } = require('./invoicePdf.service');
 const { buildInvoiceXml } = require('./invoiceXml.service');
 
 const LOGO_PATH = path.join(__dirname, '..', 'assets', 'img', 'logo.png');
-const BRAND_GRADIENT = 'linear-gradient(135deg, #FACF39, #f9c307)';
+// Los degradés CSS (linear-gradient) son de lo peor soportado entre clientes
+// de correo — la app de Gmail en Android, en particular, los renderiza mal en
+// modo oscuro (queda un recuadro amarillo "duplicado" y desfasado detrás del
+// real). Color sólido en su lugar: se ve igual de bien y anda en todos lados.
+const BRAND_COLOR = '#f9c307';
 const TEXT_DARK = '#3a2c05';
 
 class EmailService {
@@ -23,11 +27,13 @@ class EmailService {
     const transporter = this.getTransporter();
 
     const html = `
-    <div style="margin:0; padding:24px 12px; background:#f4f1e8; font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 4px 20px rgba(58,44,5,0.12);">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1e8; font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
+      <tr>
+        <td align="center" style="padding:24px 12px;">
+    <table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 4px 20px rgba(58,44,5,0.12);">
 
         <tr>
-          <td style="background:${BRAND_GRADIENT}; padding:32px 24px; text-align:center;">
+          <td bgcolor="${BRAND_COLOR}" style="background-color:${BRAND_COLOR}; padding:32px 24px; text-align:center; border-radius:14px 14px 0 0;">
             <img src="cid:matamonchis-logo" alt="La Matamonchis" width="72" height="72" style="border-radius:50%; display:block; margin:0 auto 12px;">
             <p style="margin:0; font-size:20px; font-weight:700; color:${TEXT_DARK};">SnackFlow POS</p>
             <p style="margin:4px 0 0; font-size:13px; color:${TEXT_DARK}; opacity:0.85;">La Matamonchis S.A.</p>
@@ -70,13 +76,15 @@ class EmailService {
         </tr>
 
         <tr>
-          <td style="padding:18px 24px; background:#faf8f3; text-align:center; border-top:1px solid #ece7d8;">
+          <td bgcolor="#faf8f3" style="padding:18px 24px; background-color:#faf8f3; text-align:center; border-top:1px solid #ece7d8; border-radius:0 0 14px 14px;">
             <p style="margin:0; font-size:11px; color:#8a8577;">SnackFlow POS · La Matamonchis S.A.</p>
           </td>
         </tr>
 
       </table>
-    </div>`;
+        </td>
+      </tr>
+    </table>`;
 
     await transporter.sendMail({
       from: process.env.MAIL_FROM || process.env.SMTP_USER,
@@ -122,11 +130,13 @@ class EmailService {
       </tr>` : '';
 
     const html = `
-    <div style="margin:0; padding:24px 12px; background:#f4f1e8; font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 4px 20px rgba(58,44,5,0.12);">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1e8; font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;">
+      <tr>
+        <td align="center" style="padding:24px 12px;">
+    <table role="presentation" align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:14px; overflow:hidden; box-shadow:0 4px 20px rgba(58,44,5,0.12);">
 
         <tr>
-          <td style="background:${BRAND_GRADIENT}; padding:32px 24px; text-align:center;">
+          <td bgcolor="${BRAND_COLOR}" style="background-color:${BRAND_COLOR}; padding:32px 24px; text-align:center; border-radius:14px 14px 0 0;">
             <img src="cid:matamonchis-logo" alt="La Matamonchis" width="64" height="64" style="border-radius:50%; display:block; margin:0 auto 12px;">
             <p style="margin:0; font-size:20px; font-weight:700; color:${TEXT_DARK};">SnackFlow POS</p>
             <p style="margin:4px 0 0; font-size:13px; color:${TEXT_DARK}; opacity:0.85;">La Matamonchis S.A.</p>
@@ -210,13 +220,15 @@ class EmailService {
         </tr>
 
         <tr>
-          <td style="padding:18px 24px; background:#faf8f3; text-align:center; border-top:1px solid #ece7d8;">
+          <td bgcolor="#faf8f3" style="padding:18px 24px; background-color:#faf8f3; text-align:center; border-top:1px solid #ece7d8; border-radius:0 0 14px 14px;">
             <p style="margin:0; font-size:11px; color:#8a8577;">SnackFlow POS · La Matamonchis S.A.</p>
           </td>
         </tr>
 
       </table>
-    </div>`;
+        </td>
+      </tr>
+    </table>`;
 
     // El PDF trae el mismo desglose que el cuerpo del correo, pero en un
     // documento aparte que el cliente puede guardar/imprimir.
