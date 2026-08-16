@@ -337,11 +337,7 @@
   color: var(--text-dark);
 }
 
-.field-hint {
-  font-size: 12px;
-  color: var(--text-faint);
-  margin: 6px 0 0;
-}
+/* .field-hint vive en main.css — se usa en más páginas que solo esta. */
 
 .btn-link-remove {
   background: none;
@@ -457,6 +453,18 @@
 .currency-input-wrap input:focus {
   outline: none;
   border-color: var(--brand-gold);
+}
+
+/* Quita las flechitas nativas del input number — no combinan con el resto
+   de la app (mismo criterio que .modal input[type="number"] en modal.css). */
+.currency-input-wrap input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.currency-input-wrap input[type="number"]::-webkit-outer-spin-button,
+.currency-input-wrap input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 .vuelto-result {

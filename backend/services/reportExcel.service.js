@@ -122,7 +122,9 @@ async function buildReportWorkbook({ from, to, transactions, byProduct, byUser }
     ],
     rows: transactions.map(t => [
       t.id,
-      new Date(t.created_at).toLocaleString('es-CR'),
+      // Sin timeZone esto se formatea en la hora del contenedor (UTC), no la
+      // de Costa Rica (UTC-6) — quedaría 6 horas adelantado en el Excel.
+      new Date(t.created_at).toLocaleString('es-CR', { timeZone: 'America/Costa_Rica' }),
       t.customer_name || 'Cliente general',
       t.user.full_name,
       t.payment_method === 'cash' ? 'Efectivo' : t.payment_method === 'card' ? 'Tarjeta' : '',

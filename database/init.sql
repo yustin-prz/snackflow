@@ -29,15 +29,19 @@ CREATE TABLE IF NOT EXISTS sales (
     user_id         INTEGER REFERENCES users(id),
     customer_name   VARCHAR(100),
     customer_phone  VARCHAR(30),
+    customer_email  VARCHAR(150),
     notes           TEXT,
     subtotal        NUMERIC(10,2) NOT NULL DEFAULT 0,
     discount        NUMERIC(10,2) NOT NULL DEFAULT 0,
+    discount_percentage NUMERIC(5,2),
     tax             NUMERIC(10,2) NOT NULL DEFAULT 0,
     total           NUMERIC(10,2) NOT NULL DEFAULT 0,
     payment_method  VARCHAR(20) CHECK (payment_method IN ('cash', 'card')),
     status          VARCHAR(20) DEFAULT 'open' CHECK (status IN ('open', 'completed', 'cancelled')),
     promotion       VARCHAR(50),
-    created_at      TIMESTAMP DEFAULT NOW()
+    created_at      TIMESTAMP DEFAULT NOW(),
+    synced_to_neon  BOOLEAN NOT NULL DEFAULT true,
+    synced_at       TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS sale_items (

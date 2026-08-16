@@ -1,4 +1,4 @@
-const { getSequelize } = require('../config/database');
+const { getSequelize, getActiveSource } = require('../config/database');
 const { DataTypes }    = require('sequelize');
 
 let User, Product, Sale, SaleItem;
@@ -33,15 +33,28 @@ const initModels = () => {
     user_id:        { type: DataTypes.INTEGER, allowNull: false },
     customer_name:  { type: DataTypes.STRING(100), allowNull: true },
     customer_phone: { type: DataTypes.STRING(30), allowNull: true },
+    customer_email: { type: DataTypes.STRING(150), allowNull: true },
     notes:          { type: DataTypes.TEXT, allowNull: true },
     subtotal:       { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
     discount:       { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
+    discount_percentage: { type: DataTypes.DECIMAL(5, 2), allowNull: true, defaultValue: null },
     tax:            { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
     total:          { type: DataTypes.DECIMAL(10, 2), defaultValue: 0 },
     payment_method: { type: DataTypes.ENUM('cash', 'card'), allowNull: true },
     status:         { type: DataTypes.ENUM('open', 'completed', 'cancelled'), defaultValue: 'open' },
-    promotion:      { type: DataTypes.STRING(50), allowNull: true }
+    promotion:      { type: DataTypes.STRING(50), allowNull: true },
+    // Solo importa cuando el backend está corriendo sobre Postgres local (Neon
+    // caído): marca qué ventas todavía no se subieron a Neon. Ver dbSync.service.js.
+    synced_to_neon: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    synced_at:      { type: DataTypes.DATE, allowNull: true }
   }, { tableName: 'sales', timestamps: true, createdAt: 'created_at', updatedAt: false });
+
+  // Si en el momento de crear la venta el backend está sobre Postgres local
+  // (Neon caído), queda marcada como pendiente de subir — dbSync.service.js
+  // la sube sola apenas Neon vuelve a estar disponible.
+  Sale.beforeCreate((sale) => {
+    sale.synced_to_neon = getActiveSource() !== 'local';
+  });
 
   SaleItem = sequelize.define('SaleItem', {
     id:         { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
