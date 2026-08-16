@@ -3,6 +3,21 @@ const { getModels } = require('../src/models');
 
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // 3MB decodificados
 
+// En Costa Rica no existen monedas/billetes fraccionarios: las denominaciones
+// (₡10, ₡25, ₡50, ₡100, ₡500, ...) son todas múltiplos de ₡5, así que
+// cualquier combinación de monedas reales siempre da un múltiplo de 5 (con
+// las únicas excepciones triviales de ₡5 y ₡15, que no importan para un
+// precio real). Un precio que no sea múltiplo de 5 (ej. ₡799, ₡2548) no se
+// podría cobrar/dar de vuelto en efectivo, así que no se deja guardar.
+const COIN_BASE = 5;
+
+function validatePrice(numericPrice) {
+  if (Number.isNaN(numericPrice) || numericPrice < 0)
+    throw new Error('El precio debe ser un número válido mayor o igual a 0.');
+  if (!Number.isInteger(numericPrice) || numericPrice % COIN_BASE !== 0)
+    throw new Error(`El precio debe ser un múltiplo de ₡${COIN_BASE} (no existen monedas más pequeñas en Costa Rica).`);
+}
+
 function parseDataUrl(dataUrl) {
   const match = /^data:(image\/[a-zA-Z+]+);base64,(.+)$/.exec(dataUrl);
   if (!match) throw new Error('La imagen debe enviarse como data URL base64 (data:image/...;base64,...).');
@@ -55,8 +70,7 @@ class ProductsService {
     if (!name || price === undefined || price === null)
       throw new Error('El nombre y el precio son requeridos.');
     const numericPrice = Number(price);
-    if (Number.isNaN(numericPrice) || numericPrice < 0)
-      throw new Error('El precio debe ser un número válido mayor o igual a 0.');
+    validatePrice(numericPrice);
 
     let storedImage = null;
     if (image) {
@@ -82,8 +96,7 @@ class ProductsService {
     if (name !== undefined) updates.name = name;
     if (price !== undefined) {
       const numericPrice = Number(price);
-      if (Number.isNaN(numericPrice) || numericPrice < 0)
-        throw new Error('El precio debe ser un número válido mayor o igual a 0.');
+      validatePrice(numericPrice);
       updates.price = numericPrice;
     }
     if (active !== undefined) updates.active = !!active;

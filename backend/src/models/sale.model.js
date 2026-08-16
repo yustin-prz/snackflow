@@ -19,6 +19,10 @@ const Sale = sequelize.define('Sale', {
     type: DataTypes.STRING(30),
     allowNull: true
   },
+  customer_email: {
+    type: DataTypes.STRING(150),
+    allowNull: true
+  },
   notes: {
     type: DataTypes.TEXT,
     allowNull: true
@@ -60,6 +64,15 @@ const Sale = sequelize.define('Sale', {
   },
   promotion: {
     type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  synced_to_neon: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
+  },
+  synced_at: {
+    type: DataTypes.DATE,
     allowNull: true
   }
 }, {

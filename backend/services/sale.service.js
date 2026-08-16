@@ -1,4 +1,5 @@
 const { getModels } = require('../src/models');
+const emailService = require('./email.service');
 
 const TAX_RATE = 0.13;
 
@@ -13,6 +14,16 @@ function round2(n) {
   return Math.round(n * 100) / 100;
 }
 
+// En Costa Rica no hay monedas más chicas que ₡5 — como los precios de
+// producto ya son múltiplos de 5 (ver products.service.js), itemsTotal
+// siempre lo es. Para que el total cobrado (itemsTotal - discount) se
+// mantenga en un monto que de verdad se pueda cobrar/dar de vuelto en
+// efectivo, el descuento en colones también se redondea a múltiplo de 5.
+const COIN_BASE = 5;
+function round5(n) {
+  return Math.round(n / COIN_BASE) * COIN_BASE;
+}
+
 class SaleService {
 
   async list() {
@@ -24,6 +35,7 @@ class SaleService {
       user_id: sale.user_id,
       customer_name: sale.customer_name,
       customer_phone: sale.customer_phone,
+      customer_email: sale.customer_email,
       notes: sale.notes,
       subtotal: sale.subtotal,
       discount: sale.discount,
@@ -54,6 +66,7 @@ class SaleService {
       user_id: sale.user_id,
       customer_name: sale.customer_name,
       customer_phone: sale.customer_phone,
+      customer_email: sale.customer_email,
       notes: sale.notes,
       subtotal: sale.subtotal,
       discount: sale.discount,
@@ -82,14 +95,25 @@ class SaleService {
 
   // Crea el encabezado de la venta. user_id siempre viene del token (req.user.id en el
   // controller), nunca del body — para que un cajero no pueda crear ventas a nombre de otro.
-  async create({ user_id, customer_name, customer_phone, notes }) {
+  async create({ user_id, customer_name, customer_phone, customer_email, notes }) {
     if (!user_id) throw new Error('El usuario es requerido.');
+
+    // La validación del frontend (nuevaVenta.js) es solo para la experiencia
+    // del cajero — la que cuenta de verdad es esta, igual que con el
+    // descuento manual (ver applyDiscount).
+    if (customer_name && /[0-9]/.test(customer_name)) {
+      throw new Error('El nombre del cliente no puede tener números.');
+    }
+    if (customer_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer_email)) {
+      throw new Error('El correo electrónico no es válido.');
+    }
 
     const { Sale } = getModels();
     const sale = await Sale.create({
       user_id,
       customer_name: customer_name || null,
       customer_phone: customer_phone || null,
+      customer_email: customer_email || null,
       notes: notes || null,
       subtotal: 0,
       discount: 0,
@@ -157,7 +181,7 @@ class SaleService {
     if (promotion === 'manual') {
       const eligible = distinctProducts >= DISCOUNT_MIN_DISTINCT_PRODUCTS && itemsTotal >= DISCOUNT_MIN_SALE_TOTAL;
       if (eligible && discountPercentage) {
-        discount = round2(itemsTotal * (Number(discountPercentage) / 100));
+        discount = round5(itemsTotal * (Number(discountPercentage) / 100));
       } else {
         promotion = null;
         discountPercentage = null;
@@ -224,7 +248,7 @@ class SaleService {
       );
     }
 
-    const discount = round2(itemsTotal * (pct / 100));
+    const discount = round5(itemsTotal * (pct / 100));
     const total = round2(itemsTotal - discount);
     const subtotal = round2(total / (1 + TAX_RATE));
     const tax = round2(total - subtotal);
@@ -277,6 +301,37 @@ class SaleService {
 
     await sale.update({ payment_method: paymentMethod, status: 'completed' });
 
+    // Factura electrónica: si el cajero activó el toggle y capturó un correo,
+    // se manda el resumen de la compra. La venta YA está cobrada y cerrada en
+    // este punto, así que un fallo de correo (SMTP caído, correo inválido,
+    // etc.) nunca debe deshacer la venta — solo se informa en la respuesta
+    // para que el cajero sepa que tiene que avisarle al cliente a mano.
+    let invoiceEmailSent = false;
+    let invoiceEmailError = null;
+
+    if (sale.customer_email) {
+      try {
+        const full = await this.getById(saleId);
+        await emailService.sendInvoice(sale.customer_email, {
+          saleId: full.id,
+          customerName: full.customer_name,
+          createdAt: full.created_at,
+          paymentMethod: full.payment_method,
+          cashierName: full.user.full_name,
+          items: full.items.map(i => ({ product_name: i.product.name, quantity: i.quantity, unit_price: i.unit_price, subtotal: i.subtotal })),
+          subtotal: full.subtotal,
+          discount: full.discount,
+          discountPercentage: full.discount_percentage,
+          promotion: full.promotion,
+          tax: full.tax,
+          total: full.total
+        });
+        invoiceEmailSent = true;
+      } catch (error) {
+        invoiceEmailError = error.message;
+      }
+    }
+
     return {
       id: sale.id,
       status: sale.status,
@@ -286,7 +341,9 @@ class SaleService {
       discount_percentage: sale.discount_percentage,
       promotion: sale.promotion,
       tax: sale.tax,
-      total: sale.total
+      total: sale.total,
+      invoiceEmailSent,
+      invoiceEmailError
     };
   }
 
