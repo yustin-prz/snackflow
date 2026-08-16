@@ -154,7 +154,7 @@ Todos los endpoints están documentados con Swagger/OpenAPI — con el proyecto 
 
 | Nombre | Rol |
 |---|---|
-| Yustin Eduardo Pérez Castro | Líder |
+| Yustin Eduardo Pérez Castro | Líder/Desarrollador |
 | Kendal Barrios Calderón | Desarrollador |
 | Eduardo Hernández Contreras | Desarrollador |
 
