@@ -9,6 +9,9 @@ node_modules/
 *.log
 npm-debug.log*
 
+# Reporte de cobertura de Jest (se regenera con npm test)
+backend/coverage/
+
 # Sistema operativo
 .DS_Store
 Thumbs.db

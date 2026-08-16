@@ -70,7 +70,8 @@ snackflow/
 │       ├── auth.test.js
 │       ├── sales.test.js
 │       ├── discount.test.js
-│       └── promotion.test.js
+│       ├── promotion.test.js
+│       └── products.test.js
 ├── frontend/
 │   ├── Dockerfile
 │   ├── nginx.conf
@@ -307,6 +308,19 @@ En Costa Rica no existen monedas/billetes fraccionarios: las denominaciones (₡
 - **Promo 2x1 Gelatina**: no necesita redondeo aparte — el descuento es directamente el precio de una unidad, que ya es múltiplo de 5.
 - **Efectivo recibido** (`nuevaVenta.js`): también debe ser múltiplo de ₡5, por la misma razón — el vuelto calculado (recibido − total) queda múltiplo de 5 automáticamente.
 - El desglose de Subtotal/IVA que se muestra (accounting, no dinero físico que se entrega por separado) sigue permitiendo decimales — eso es normal y no rompe la regla, porque lo único que se cobra/paga en monedas reales es el **total**.
+
+## Pruebas
+`backend/tests/*.test.js` (Jest, sin Supertest todavía — son pruebas unitarias de los servicios, no de los endpoints HTTP). Corren con `npm test` (dentro del contenedor: `docker compose exec backend npm test`), o `npx jest` para verlas sin el reporte de cobertura.
+
+Enfoque: mockear `getModels()` (`jest.mock('../src/models')`) con objetos livianos que imitan una instancia de Sequelize (`{ id, ..., update: jest.fn(...) }`) en vez de levantar una base de datos real — más rápido, determinístico, y no ensucia los datos de desarrollo. `email.service.js` también se mockea para no mandar correos de verdad al correr los tests.
+
+- `auth.test.js` — login (contraseña incorrecta, contraseña temporal pendiente, 2FA requerido/pendiente/incorrecto, desactivación automática por plazo vencido), cambio de contraseña temporal, `userExists()`
+- `sales.test.js` — `create()`, y sobre todo `recalculateSale()`: que el total sea la suma de los productos tal cual (con IVA ya incluido), no esa suma + 13% de más — es la regla que se rompió una vez y por eso tiene el test más específico
+- `discount.test.js` — HU-05 completa: los 3 requisitos, el tope de 10%, que no se combine con otra promoción, y que el monto en colones quede en múltiplo de 5
+- `promotion.test.js` — HU-06: pares de gelatina, que se aplique/quite sola, y que nunca se evalúe si ya hay un descuento manual activo
+- `products.test.js` — validación de denominaciones de moneda (₡5) al crear/editar un producto
+
+Lo que NO tienen todavía: pruebas de integración contra los endpoints HTTP reales (Supertest está en las devDependencies pero sin usar), y servicios como `report.service.js`, `users.service.js`, `saleItem.service.js`, o el módulo de factura electrónica (`email.service.js`/`invoicePdf.service.js`/`invoiceXml.service.js`) no tienen cobertura — quedan para una ronda aparte si hace falta.
 
 ## Principios SOLID aplicados
 - **S** — Cada servicio tiene una sola responsabilidad (auth.service, discount.service, promotion.service, etc.)
