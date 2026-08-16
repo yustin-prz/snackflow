@@ -327,6 +327,14 @@ document.addEventListener('DOMContentLoaded', () => {
     $('factura-fields').style.display = state.facturaActiva ? 'flex' : 'none';
   });
 
+  // El nombre no debe llevar números — se filtra apenas se escribe (también
+  // cubre pegar texto, a diferencia de bloquear solo el keydown) en vez de
+  // solo avisar después al confirmar.
+  $('factura-nombre').addEventListener('input', (e) => {
+    const limpio = e.target.value.replace(/[0-9]/g, '');
+    if (limpio !== e.target.value) e.target.value = limpio;
+  });
+
   function renderResumen() {
     sincronizarDescuento();
 
@@ -454,6 +462,35 @@ document.addEventListener('DOMContentLoaded', () => {
         $('pago-error').textContent = 'El efectivo recibido debe ser al menos el total de la venta.';
         return;
       }
+      // No existen monedas más chicas que ₡5 en Costa Rica — no se puede
+      // recibir (ni dar de vuelto) un monto como ₡1233.
+      if (!Number.isInteger(recibido) || recibido % 5 !== 0) {
+        $('pago-error').textContent = 'El efectivo recibido debe ser un múltiplo de ₡5.';
+        return;
+      }
+    }
+
+    // Si el cajero activó "Factura electrónica", el correo es obligatorio
+    // (el nombre sigue siendo opcional) — sin correo no hay a dónde mandarla.
+    // Esto tiene que validarse ANTES de deshabilitar el botón: si se sale acá,
+    // no hay try/finally todavía que lo vuelva a habilitar.
+    let correoFactura = null;
+    let nombreFacturaValidado = null;
+    if (state.facturaActiva) {
+      correoFactura = $('factura-correo').value.trim();
+      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!correoFactura || !EMAIL_RE.test(correoFactura)) {
+        $('pago-error').textContent = 'Ingresá un correo válido para la factura electrónica.';
+        return;
+      }
+
+      // El nombre es opcional, pero si se puso algo no puede tener números
+      // (el input ya los filtra al escribir; esto es el respaldo).
+      nombreFacturaValidado = $('factura-nombre').value.trim() || null;
+      if (nombreFacturaValidado && /[0-9]/.test(nombreFacturaValidado)) {
+        $('pago-error').textContent = 'El nombre para la factura no puede tener números.';
+        return;
+      }
     }
 
     const btn = $('btn-confirmar');
@@ -462,17 +499,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.textContent = 'Guardando...';
 
     try {
-      // El nombre para la factura electrónica solo se manda si el toggle está
-      // activo. El correo se captura en el formulario pero todavía NO se
-      // envía al backend: la tabla "sales" no tiene una columna para eso
-      // todavía. Tampoco se manda teléfono/notas: esos campos ya no existen
-      // en este formulario.
-      const nombreFactura = state.facturaActiva ? ($('factura-nombre').value.trim() || null) : null;
+      // Tampoco se manda teléfono/notas: esos campos ya no existen en este formulario.
+      const nombreFactura = nombreFacturaValidado;
 
       // 1. Crear el encabezado de la venta (el usuario se toma del token en el backend)
       const { ok: okSale, data: saleData } = await api.post('/sales', {
         customer_name: nombreFactura,
         customer_phone: null,
+        customer_email: correoFactura,
         notes: null
       });
       if (!okSale) throw new Error(saleData.message || 'No se pudo crear la venta.');
@@ -512,7 +546,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       if (!okComplete) throw new Error(completeData.message || 'No se pudo cerrar la venta.');
 
-      alert(`Venta #${saleId} registrada correctamente. Total: ${money(completeData.total)}`);
+      let mensaje = `Venta #${saleId} registrada correctamente. Total: ${money(completeData.total)}`;
+      if (correoFactura) {
+        mensaje += completeData.invoiceEmailSent
+          ? `\n\nLa factura electrónica se envió a ${correoFactura}.`
+          : `\n\nNo se pudo enviar la factura electrónica a ${correoFactura}${completeData.invoiceEmailError ? ` (${completeData.invoiceEmailError})` : ''}. La venta sí quedó registrada — avisale al cliente a mano.`;
+      }
+      alert(mensaje);
       resetWizard();
     } catch (e) {
       $('pago-error').textContent = e.message || 'Ocurrió un error al registrar la venta.';

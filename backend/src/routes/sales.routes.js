@@ -68,6 +68,9 @@ router.get('/:id', saleController.getById);
  *                 type: string
  *               customer_phone:
  *                 type: string
+ *               customer_email:
+ *                 type: string
+ *                 description: Si se manda, al completar la venta se le envía por correo la factura electrónica con el resumen de la compra.
  *               notes:
  *                 type: string
  *     responses:

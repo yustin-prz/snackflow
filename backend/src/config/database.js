@@ -1,6 +1,7 @@
 const { Sequelize } = require('sequelize');
 
 let sequelize;
+let activeSource = null; // 'neon' | 'local' — para que /health y los logs digan dónde estamos parados
 
 const createConnection = (url, ssl) => new Sequelize(url, {
   dialect: 'postgres',
@@ -11,12 +12,21 @@ const createConnection = (url, ssl) => new Sequelize(url, {
   logging: false
 });
 
+// Abre una conexión NUEVA y la valida antes de devolverla — no toca la
+// conexión activa. Así se puede "probar" Neon o local sin arriesgar la que
+// ya está funcionando si la prueba falla.
+async function probeConnection(url, ssl) {
+  const conn = createConnection(url, ssl);
+  await conn.authenticate();
+  return conn;
+}
+
 const connectDB = async () => {
   // Intentar Neon primero si está configurado
   if (process.env.DATABASE_BACKUP_URL) {
     try {
-      sequelize = createConnection(process.env.DATABASE_BACKUP_URL, true);
-      await sequelize.authenticate();
+      sequelize = await probeConnection(process.env.DATABASE_BACKUP_URL, true);
+      activeSource = 'neon';
       console.log('✅ Conectado a Neon PostgreSQL (nube).');
       return;
     } catch (error) {
@@ -26,8 +36,8 @@ const connectDB = async () => {
 
   // Fallback a BD local
   try {
-    sequelize = createConnection(process.env.DATABASE_URL, false);
-    await sequelize.authenticate();
+    sequelize = await probeConnection(process.env.DATABASE_URL, false);
+    activeSource = 'local';
     console.log('✅ Conectado a PostgreSQL local (sin internet).');
   } catch (error) {
     console.error('❌ No se pudo conectar a ninguna base de datos:', error.message);
@@ -40,4 +50,64 @@ const getSequelize = () => {
   return sequelize;
 };
 
-module.exports = { connectDB, getSequelize };
+const getActiveSource = () => activeSource;
+
+// connectDB() solo corría UNA VEZ, al arrancar el contenedor: si Neon se
+// caía DESPUÉS de eso (ej. se desconecta el internet a mitad de una sesión),
+// el backend se quedaba intentando usar esa misma conexión rota para
+// siempre — nunca pasaba a local, así que "sin internet debería dejar
+// entrar por Postgres local" no pasaba de verdad en ese escenario, solo
+// funcionaba si el contenedor arrancaba ya sin internet.
+//
+// Esto revisa la conexión activa cada `intervalMs` y cambia de lado si hace
+// falta: Neon → local si se cae, local → Neon apenas vuelve a estar
+// disponible. `onSwitch` se usa para volver a correr initModels() contra la
+// conexión nueva (los modelos quedan atados a la instancia de Sequelize con
+// la que se definieron).
+//
+// Importante — esto es SOLO failover de conexión, no sincronización de
+// datos: si se escribe algo en local mientras Neon está caído, esos
+// registros se quedan únicamente ahí. Neon y local son dos bases
+// independientes; no hay replicación automática entre ellas. Subirlos a
+// mano es lo que hace database/sync-to-neon.sh (y ese script tampoco
+// resuelve conflictos de ID si Neon recibió otros datos mientras tanto —
+// para eso hace falta diseñarlo aparte, no es un fix de una línea).
+function startHealthCheck(onSwitch, intervalMs = 20000) {
+  if (!process.env.DATABASE_BACKUP_URL) return; // sin Neon configurado no hay nada que vigilar
+
+  setInterval(async () => {
+    try {
+      if (activeSource === 'neon') {
+        await sequelize.authenticate(); // sigue viva, no hay nada que hacer
+        return;
+      }
+
+      // Estamos en local: probar si Neon ya volvió, sin soltar la conexión
+      // local activa a menos que la prueba tenga éxito.
+      const neonConn = await probeConnection(process.env.DATABASE_BACKUP_URL, true);
+      const oldConn = sequelize;
+      sequelize = neonConn;
+      activeSource = 'neon';
+      await oldConn.close().catch(() => {});
+      console.log('✅ Internet recuperado — reconectado a Neon PostgreSQL.');
+      if (onSwitch) onSwitch();
+    } catch (error) {
+      if (activeSource !== 'neon') return; // ya estamos en local y también falló: no hay más a qué recurrir
+
+      console.warn('⚠️  Se perdió la conexión a Neon, cambiando a PostgreSQL local...');
+      try {
+        const localConn = await probeConnection(process.env.DATABASE_URL, false);
+        const oldConn = sequelize;
+        sequelize = localConn;
+        activeSource = 'local';
+        await oldConn.close().catch(() => {});
+        console.log('✅ Reconectado a PostgreSQL local.');
+        if (onSwitch) onSwitch();
+      } catch (localError) {
+        console.error('❌ Neon se cayó y tampoco se pudo conectar a PostgreSQL local:', localError.message);
+      }
+    }
+  }, intervalMs);
+}
+
+module.exports = { connectDB, getSequelize, getActiveSource, startHealthCheck };

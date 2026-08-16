@@ -4,13 +4,23 @@ const rateLimit = require('express-rate-limit');
 const { login, changeTempPassword, checkUser, setupTotp, verifyTotpAndReset } = require('../controllers/auth.controller');
 const { verifyToken } = require('../middlewares/auth.middleware');
 
+// Antes esto limitaba por IP sola: en un local con un solo router/wifi
+// (o varias cajas en la misma red), todos los cajeros comparten la misma IP
+// vista por el servidor, así que 5 intentos fallidos de UN usuario bloqueaba
+// el login de TODOS los demás durante 15 minutos. La clave ahora es
+// IP + usuario, para que el límite sea "este usuario, desde esta red", no
+// "cualquiera desde esta red". La IP se mantiene en la clave para que
+// alguien no evada el límite simplemente probando muchos usuarios distintos.
+const porIpYUsuario = (req) => `${req.ip}:${(req.body && req.body.username) || 'sin-usuario'}`;
+
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: { message: 'Demasiados intentos fallidos. Intentá de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true
+  skipSuccessfulRequests: true,
+  keyGenerator: porIpYUsuario
 });
 
 const resetLimiter = rateLimit({
@@ -19,6 +29,7 @@ const resetLimiter = rateLimit({
   message: { message: 'Demasiados intentos. Intentá de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: porIpYUsuario
 });
 
 const changePasswordLimiter = rateLimit({
@@ -27,6 +38,7 @@ const changePasswordLimiter = rateLimit({
   message: { message: 'Demasiados intentos. Intentá de nuevo en 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: porIpYUsuario
 });
 
 /**

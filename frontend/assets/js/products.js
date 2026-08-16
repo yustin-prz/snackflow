@@ -178,6 +178,17 @@ async function submitProductForm() {
   const price = document.getElementById('product-price').value;
   const active = document.getElementById('product-active').checked;
 
+  // En Costa Rica no hay monedas más chicas que ₡5, así que un precio como
+  // ₡799 o ₡2548 no se podría cobrar/dar de vuelto en efectivo. La
+  // validación real está en el backend; esto es solo para no hacer el
+  // viaje al servidor con un valor que ya sabemos que va a fallar.
+  const numericPrice = Number(price);
+  if (Number.isNaN(numericPrice) || numericPrice < 0 || !Number.isInteger(numericPrice) || numericPrice % 5 !== 0) {
+    modalError.textContent = 'El precio debe ser un múltiplo de ₡5 (ej. 800, 1200, 505).';
+    modalError.style.display = 'block';
+    return;
+  }
+
   const body = { name, price, active };
   if (selectedImageDataUrl !== undefined) body.image = selectedImageDataUrl;
 
