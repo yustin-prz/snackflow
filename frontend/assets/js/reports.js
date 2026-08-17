@@ -311,5 +311,17 @@ document.addEventListener('DOMContentLoaded', () => {
   new MutationObserver(() => { if (lastData) renderCharts(lastData); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
+  // Respaldo para tablets/WebViews con soporte incompleto de ResizeObserver
+  // (que es lo que Chart.js usa internamente para su "responsive: true").
+  // Sin esto, en algunos dispositivos los gráficos quedan con el tamaño del
+  // primer render y no se ajustan al rotar la pantalla o cambiar de layout.
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      Object.values(charts).forEach(c => c && c.resize());
+    }, 150);
+  });
+
   loadReports();
 });

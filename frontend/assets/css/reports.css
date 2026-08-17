@@ -85,7 +85,10 @@
   margin-bottom: 24px;
 }
 
-@media (max-width: 800px) {
+/* Tablets en vertical (iPad ~768-834px, Android genéricas ~800px) también
+   apilan en una columna: dos gráficos angostos uno al lado del otro son
+   difíciles de leer, sobre todo los que tienen etiquetas de texto. */
+@media (max-width: 900px) {
   .reports-charts-grid { grid-template-columns: 1fr; }
 }
 
@@ -95,6 +98,12 @@
   padding: 18px 22px;
   box-shadow: var(--shadow-card);
   border-top: 3px solid transparent;
+  /* Los hijos de un grid tienen min-width:auto implícito, que les impide
+     encogerse por debajo del ancho de su contenido. El canvas de Chart.js
+     toma el ancho de este contenedor al renderizarse, así que sin esto se
+     arma una dependencia circular que rompe el responsive en pantallas
+     angostas (el motivo real de "los gráficos no son responsivos"). */
+  min-width: 0;
 }
 
 .reports-chart-card.accent-gold { border-top-color: #b8860b; }
@@ -105,6 +114,8 @@
   position: relative;
   width: 100%;
   height: 260px;
+  min-width: 0;
+  overflow: hidden; /* refuerzo: el canvas nunca empuja el contenedor a ser más ancho */
 }
 
 #tx-table-el { table-layout: fixed; }
